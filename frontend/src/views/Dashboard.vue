@@ -140,13 +140,13 @@
 
     <section class="mt-16 grid gap-6 lg:grid-cols-2">
       <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <h2 class="text-lg font-semibold">Publication Trends by Year</h2>
+        <h2 class="text-lg font-semibold">Yearly Publication Trend</h2>
         <div class="relative mt-4 h-72">
           <canvas id="yearlyTrendsChart" ref="yearlyTrendsChart" class="h-full w-full"></canvas>
         </div>
       </div>
       <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <h2 class="text-lg font-semibold">Publications by Type</h2>
+        <h2 class="text-lg font-semibold">Publication Types</h2>
         <div class="relative mt-4 h-72">
           <canvas id="typeChart" ref="typeChart" class="h-full w-full"></canvas>
         </div>
@@ -166,7 +166,7 @@
 
     <section class="mt-16 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <h2 class="text-lg font-semibold">Publications per Year (by College)</h2>
+        <h2 class="text-lg font-semibold">Yearly Publications by College</h2>
         <div class="flex items-center gap-3">
           <label class="text-xs uppercase tracking-[0.22em] text-slate-500">College</label>
           <select
@@ -186,7 +186,7 @@
 
 
     <section class="mt-16 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-      <h2 class="text-lg font-semibold">Publications by College/Institute</h2>
+          <h2 class="text-lg font-semibold">Total Publications by College</h2>
       <div class="mt-4 overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="text-left text-xs uppercase tracking-[0.22em] text-slate-500">
