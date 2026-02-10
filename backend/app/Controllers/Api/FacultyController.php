@@ -38,6 +38,7 @@ class FacultyController extends ResourceController
 
             $builder = $this->model->builder();
             $builder->where('status', 'active');
+            $builder->where('deleted_at', null);
 
             // Apply filters
             if ($search) {

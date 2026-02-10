@@ -33,7 +33,7 @@
       <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
         <div class="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-slate-400">
           <span>Dashboard Snapshot</span>
-          <span class="rounded-full bg-green-500/10 px-3 py-1 text-green-300">Updated {{ dashboardData.last_updated || '—' }}</span>
+          <span class="rounded-full bg-green-500/10 px-3 py-1 text-green-300">Updated {{ dashboardData.last_updated || '-' }}</span>
         </div>
         <div class="mt-6 grid gap-4 md:grid-cols-2">
           <div
@@ -133,6 +133,51 @@
             <button class="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm font-semibold hover:border-slate-600">
               Export report
             </button>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-semibold">Faculty Snapshot</h2>
+            <span class="text-xs uppercase tracking-[0.22em] text-slate-500">metrics</span>
+          </div>
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Total faculty</p>
+              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.total_faculty }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">With scholar profile</p>
+              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.with_profile }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Missing citations</p>
+              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.missing_citations }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Missing H-index</p>
+              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.missing_h_index }}</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:col-span-2">
+              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Missing i-10 index</p>
+              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.missing_i10_index }}</p>
+            </div>
+          </div>
+          <div class="mt-6">
+            <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Top citations</div>
+            <div class="mt-3 space-y-2">
+              <div
+                v-for="faculty in topFacultyByCitations"
+                :key="faculty.name"
+                class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
+              >
+                <span class="text-slate-200">{{ faculty.name }}</span>
+                <span class="text-slate-400">{{ faculty.google_scholar_citations ?? '-' }}</span>
+              </div>
+              <div v-if="topFacultyByCitations.length === 0" class="text-sm text-slate-500">
+                No citation data available.
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -276,6 +321,16 @@ export default {
         recent_activity: [],
         last_updated: ''
       },
+      facultyMetrics: {
+        metrics: {
+          total_faculty: 0,
+          with_profile: 0,
+          missing_citations: 0,
+          missing_h_index: 0,
+          missing_i10_index: 0
+        },
+        top_by_citations: []
+      },
       charts: {
         yearlyTrends: null,
         publicationType: null,
@@ -294,10 +349,14 @@ export default {
         .map(item => item.college_institute)
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b));
+    },
+    topFacultyByCitations() {
+      return this.facultyMetrics.top_by_citations || [];
     }
   },
   mounted() {
     this.fetchDashboardData();
+    this.fetchFacultyMetrics();
   },
   methods: {
     async fetchDashboardData() {
@@ -315,6 +374,14 @@ export default {
         alert('Failed to load dashboard data');
       } finally {
         this.loading = false;
+      }
+    },
+    async fetchFacultyMetrics() {
+      try {
+        const response = await axios.get(`${apiBase}/dashboard/faculty-metrics`);
+        this.facultyMetrics = response.data.data;
+      } catch (error) {
+        console.error('Error fetching faculty metrics:', error);
       }
     },
 

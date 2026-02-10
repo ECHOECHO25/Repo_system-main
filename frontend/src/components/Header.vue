@@ -18,5 +18,12 @@
     <button class="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-slate-400">
       Sign in
     </button>
+    <div class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="relative overflow-hidden">
+      <div class="pointer-events-none absolute -top-40 left-10 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl"></div>
+      <div class="pointer-events-none absolute right-0 top-20 h-80 w-80 rounded-full bg-amber-500/20 blur-3xl"></div>
+      <div class="pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl"></div>
+    </div>
+    </div>
   </header>
 </template>

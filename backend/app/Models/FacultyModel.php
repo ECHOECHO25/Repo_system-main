@@ -26,6 +26,11 @@ class FacultyModel extends Model
         $db = \Config\Database::connect();
         
         $totalFaculty = $this->where('status', 'active')->countAllResults(false);
+        $withProfile = $db->table($this->table)
+            ->where('google_scholar_account IS NOT NULL')
+            ->where('google_scholar_account !=', '')
+            ->where('status', 'active')
+            ->countAllResults();
         $avgHIndex = $db->table($this->table)
                         ->selectAvg('h_index')
                         ->where('h_index IS NOT NULL')
@@ -39,6 +44,16 @@ class FacultyModel extends Model
             ->where('status', 'active')
             ->countAllResults();
 
+        $missingCitations = $db->table($this->table)
+            ->where('google_scholar_citations IS NULL')
+            ->where('status', 'active')
+            ->countAllResults();
+
+        $missingI10Index = $db->table($this->table)
+            ->where('i10_index IS NULL')
+            ->where('status', 'active')
+            ->countAllResults();
+
         $lowCitations = $db->table($this->table)
             ->where('google_scholar_citations <', 100)
             ->where('status', 'active')
@@ -46,8 +61,11 @@ class FacultyModel extends Model
         
         return [
             'total_faculty' => $totalFaculty,
+            'with_profile' => (int)$withProfile,
             'avg_h_index' => round($avgHIndex, 2),
             'missing_h_index' => (int)$missingHIndex,
+            'missing_citations' => (int)$missingCitations,
+            'missing_i10_index' => (int)$missingI10Index,
             'low_citations' => (int)$lowCitations,
         ];
     }
