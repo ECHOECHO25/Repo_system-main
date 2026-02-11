@@ -18,7 +18,7 @@
             id="faculty-search"
             v-model="query"
             type="text"
-            placeholder="Type a name (e.g., Roscion Ian C. Lumbres)"
+            placeholder="Type a name "
             class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none"
           />
         </div>
@@ -51,61 +51,130 @@
           >
             Export CSV
           </button>
+          <button
+            type="button"
+            class="rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-rose-200 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="selectedIds.length === 0"
+            @click="openBulkDeleteModal"
+          >
+             Delete
+          </button>
         </div>
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/60">
-      <table class="w-full text-left text-sm text-slate-200">
-        <thead class="bg-slate-900/90 text-xs uppercase tracking-[0.22em] text-slate-400">
-          <tr>
-            <th class="px-6 py-4">Name</th>
-            <th class="px-6 py-4">Citations</th>
-            <th class="px-6 py-4">H-index</th>
-            <th class="px-6 py-4">i-10 Index</th>
-            <th class="px-6 py-4">Scholar Profile</th>
-            <th class="px-6 py-4 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="faculty in filteredFaculty"
-            :key="faculty.id || faculty.name"
-            class="border-t border-slate-800/70"
-          >
-            <td class="px-6 py-4 font-medium text-slate-100">{{ faculty.name }}</td>
-            <td class="px-6 py-4">{{ faculty.citations ?? '-' }}</td>
-            <td class="px-6 py-4">{{ faculty.hIndex ?? '-' }}</td>
-            <td class="px-6 py-4">{{ faculty.i10Index ?? '-' }}</td>
-            <td class="px-6 py-4">
-              <a
-                v-if="faculty.scholarUrl"
-                :href="faculty.scholarUrl"
-                target="_blank"
-                rel="noreferrer"
-                class="text-emerald-300 hover:text-emerald-200"
-              >
-                View profile
-              </a>
-              <span v-else class="text-slate-500">-</span>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <button
-                type="button"
-                class="rounded-full border border-rose-500/40 px-3 py-1 text-xs uppercase tracking-[0.3em] text-rose-200 hover:border-rose-400"
-                @click="openDeleteModal(faculty)"
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-          <tr v-if="filteredFaculty.length === 0">
-            <td class="px-6 py-6 text-slate-400" colspan="6">
-              No matches found. Try a different spelling.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
+      <div class="overflow-hidden">
+        <table class="w-full text-left text-sm text-slate-200">
+          <thead class="bg-slate-900/90 text-xs uppercase tracking-[0.22em] text-slate-400">
+            <tr>
+              <th class="px-4 py-4">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
+                  :checked="allSelected"
+                  @change="toggleSelectAll"
+                />
+              </th>
+              <th class="px-4 py-4">Name</th>
+              <th class="px-4 py-4">
+                <button type="button" class="flex items-center gap-2" @click="changeSort('citations')">
+                  Citations
+                  <span v-if="sortBy === 'citations'">{{ sortOrder === 'desc' ? '▼' : '▲' }}</span>
+                </button>
+              </th>
+              <th class="px-4 py-4">
+                <button type="button" class="flex items-center gap-2" @click="changeSort('h_index')">
+                  H-index
+                  <span v-if="sortBy === 'h_index'">{{ sortOrder === 'desc' ? '▼' : '▲' }}</span>
+                </button>
+              </th>
+              <th class="px-4 py-4">
+                <button type="button" class="flex items-center gap-2" @click="changeSort('i10_index')">
+                  i-10 Index
+                  <span v-if="sortBy === 'i10_index'">{{ sortOrder === 'desc' ? '▼' : '▲' }}</span>
+                </button>
+              </th>
+              <th class="px-4 py-4">Scholar Profile</th>
+              <th class="px-4 py-4 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="faculty in filteredFaculty"
+              :key="faculty.id || faculty.name"
+              class="border-t border-slate-800/70"
+            >
+              <td class="px-4 py-4">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
+                  :checked="selectedIds.includes(faculty.id)"
+                  @change="toggleSelectRow(faculty.id)"
+                />
+              </td>
+              <td class="px-4 py-4 font-medium text-slate-100">{{ faculty.name }}</td>
+              <td class="px-4 py-4">{{ faculty.citations ?? '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.hIndex ?? '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.i10Index ?? '-' }}</td>
+              <td class="px-4 py-4">
+                <a
+                  v-if="faculty.scholarUrl"
+                  :href="faculty.scholarUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="text-emerald-300 hover:text-emerald-200"
+                >
+                  View profile
+                </a>
+                <span v-else class="text-slate-500">-</span>
+              </td>
+              <td class="px-4 py-4 text-right">
+                <button
+                  type="button"
+                  class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.3em] text-emerald-200 hover:border-emerald-300"
+                  @click="openEditModal(faculty)"
+                >
+                  Edit
+                </button>
+              </td>
+            </tr>
+            <tr v-if="filteredFaculty.length === 0">
+              <td class="px-4 py-6 text-slate-400" colspan="7">
+                No matches found. Try a different spelling.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="pagination.total_pages > 1" class="mt-4 flex items-center justify-center gap-2">
+        <button
+          class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 disabled:opacity-40"
+          :disabled="pagination.current_page === 1"
+          @click="changePage(pagination.current_page - 1)"
+        >
+          Prev
+        </button>
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          class="rounded-full border px-4 py-2 text-xs uppercase tracking-[0.3em]"
+          :class="page === pagination.current_page
+            ? 'border-emerald-400 bg-emerald-400/10 text-emerald-100'
+            : 'border-slate-800 text-slate-200 hover:border-emerald-400'"
+          @click="changePage(page)"
+        >
+          {{ page }}
+        </button>
+        <button
+          class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 disabled:opacity-40"
+          :disabled="pagination.current_page === pagination.total_pages"
+          @click="changePage(pagination.current_page + 1)"
+        >
+          Next
+        </button>
+      </div>
     </div>
 
     <div
@@ -275,36 +344,123 @@
     </div>
 
     <div
-      v-if="showDeleteModal"
+      v-if="showEditModal"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4"
+    >
+      <div class="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-950 p-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Edit Faculty Metrics</h2>
+          <button
+            type="button"
+            class="text-slate-400 hover:text-white"
+            @click="closeEditModal"
+          >
+            Close
+          </button>
+        </div>
+        <form class="mt-4 grid gap-4" @submit.prevent="submitEditForm">
+          <div>
+            <label class="text-xs uppercase tracking-[0.3em] text-slate-500">Name</label>
+            <input
+              v-model="editForm.name"
+              type="text"
+              required
+              class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+            />
+            <p v-if="editErrors.name" class="mt-2 text-xs text-rose-300">{{ editErrors.name }}</p>
+          </div>
+          <div class="grid gap-4 md:grid-cols-3">
+            <div>
+              <label class="text-xs uppercase tracking-[0.3em] text-slate-500">Citations</label>
+              <input
+                v-model.number="editForm.citations"
+                type="number"
+                min="0"
+                class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+              />
+              <p v-if="editErrors.citations" class="mt-2 text-xs text-rose-300">{{ editErrors.citations }}</p>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-[0.3em] text-slate-500">H-index</label>
+              <input
+                v-model.number="editForm.hIndex"
+                type="number"
+                min="0"
+                class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+              />
+              <p v-if="editErrors.hIndex" class="mt-2 text-xs text-rose-300">{{ editErrors.hIndex }}</p>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-[0.3em] text-slate-500">i-10 Index</label>
+              <input
+                v-model.number="editForm.i10Index"
+                type="number"
+                min="0"
+                class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+              />
+              <p v-if="editErrors.i10Index" class="mt-2 text-xs text-rose-300">{{ editErrors.i10Index }}</p>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-[0.3em] text-slate-500">Scholar URL</label>
+            <input
+              v-model="editForm.scholarUrl"
+              type="url"
+              class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+            />
+            <p v-if="editErrors.scholarUrl" class="mt-2 text-xs text-rose-300">
+              {{ editErrors.scholarUrl }}
+            </p>
+          </div>
+          <div class="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 hover:border-emerald-400"
+              @click="closeEditModal"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="rounded-full bg-emerald-400/20 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-100 hover:bg-emerald-400/30"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      v-if="showBulkDeleteModal"
       class="fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-4"
     >
       <div class="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Delete faculty</h2>
+          <h2 class="text-lg font-semibold">Delete selected faculty</h2>
           <button
             type="button"
             class="text-slate-400 hover:text-white"
-            @click="closeDeleteModal"
+            @click="closeBulkDeleteModal"
           >
             Close
           </button>
         </div>
         <div class="mt-4 text-sm text-slate-300">
-          Are you sure you want to delete
-          <span class="font-semibold text-white">{{ selectedFaculty?.name }}</span>?
+          Are you sure you want to delete {{ selectedIds.length }} selected faculty member(s)?
         </div>
         <div class="mt-6 flex justify-end gap-3">
           <button
             type="button"
             class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 hover:border-emerald-400"
-            @click="closeDeleteModal"
+            @click="closeBulkDeleteModal"
           >
             Cancel
           </button>
           <button
             type="button"
             class="rounded-full bg-rose-500/20 px-4 py-2 text-xs uppercase tracking-[0.3em] text-rose-100 hover:bg-rose-500/30"
-            @click="confirmDelete"
+            @click="confirmBulkDelete"
           >
             Delete
           </button>
@@ -327,18 +483,37 @@ const facultyList = ref([])
 const loading = ref(false)
 const pagination = ref({
   current_page: 1,
-  per_page: 1000,
+  per_page: 10,
   total: 0,
   total_pages: 0
 })
+const sortBy = ref('citations')
+const sortOrder = ref('desc')
+const selectedIds = ref([])
+const showBulkDeleteModal = ref(false)
 const importError = ref('')
 const importing = ref(false)
 const showImportSuccessModal = ref(false)
 const showImportErrorsModal = ref(false)
 const importSummary = ref('')
 const importErrors = ref([])
-const showDeleteModal = ref(false)
+const showEditModal = ref(false)
 const selectedFaculty = ref(null)
+const editErrors = ref({
+  name: '',
+  citations: '',
+  hIndex: '',
+  i10Index: '',
+  scholarUrl: ''
+})
+const editForm = ref({
+  id: null,
+  name: '',
+  citations: null,
+  hIndex: null,
+  i10Index: null,
+  scholarUrl: ''
+})
 const errors = ref({
   name: '',
   citations: '',
@@ -355,11 +530,7 @@ const form = ref({
 })
 
 const filteredFaculty = computed(() => {
-  const needle = query.value.trim().toLowerCase()
-  if (!needle) return facultyList.value
-  return facultyList.value.filter((faculty) =>
-    faculty.name.toLowerCase().includes(needle)
-  )
+  return facultyList.value
 })
 
 const mapBackendFaculty = (faculty) => ({
@@ -377,7 +548,9 @@ const fetchFaculty = async () => {
   try {
     const params = {
       page: pagination.value.current_page,
-      per_page: pagination.value.per_page
+      per_page: pagination.value.per_page,
+      sort: sortBy.value,
+      order: sortOrder.value
     }
     if (query.value.trim()) {
       params.search = query.value.trim()
@@ -387,6 +560,7 @@ const fetchFaculty = async () => {
     if (response.data.pagination) {
       pagination.value = response.data.pagination
     }
+    selectedIds.value = []
   } catch (error) {
     console.error('Error fetching faculty:', error)
   } finally {
@@ -407,6 +581,79 @@ onMounted(() => {
   fetchFaculty()
 })
 
+const changePage = (page) => {
+  if (page < 1 || page > pagination.value.total_pages) return
+  pagination.value.current_page = page
+  fetchFaculty()
+}
+
+const visiblePages = computed(() => {
+  const pages = []
+  const current = pagination.value.current_page
+  const total = pagination.value.total_pages
+  let start = Math.max(1, current - 2)
+  let end = Math.min(total, current + 2)
+  for (let i = start; i <= end; i += 1) {
+    pages.push(i)
+  }
+  return pages
+})
+
+const changeSort = (field) => {
+  if (sortBy.value === field) {
+    sortOrder.value = sortOrder.value === 'desc' ? 'asc' : 'desc'
+  } else {
+    sortBy.value = field
+    sortOrder.value = 'desc'
+  }
+  pagination.value.current_page = 1
+  fetchFaculty()
+}
+
+const allSelected = computed(() => {
+  if (!filteredFaculty.value.length) return false
+  return filteredFaculty.value.every((faculty) => selectedIds.value.includes(faculty.id))
+})
+
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = filteredFaculty.value.map((faculty) => faculty.id)
+  }
+}
+
+const toggleSelectRow = (id) => {
+  if (!id) return
+  if (selectedIds.value.includes(id)) {
+    selectedIds.value = selectedIds.value.filter((item) => item !== id)
+  } else {
+    selectedIds.value = [...selectedIds.value, id]
+  }
+}
+
+const openBulkDeleteModal = () => {
+  if (selectedIds.value.length === 0) return
+  showBulkDeleteModal.value = true
+}
+
+const closeBulkDeleteModal = () => {
+  showBulkDeleteModal.value = false
+}
+
+const confirmBulkDelete = async () => {
+  if (selectedIds.value.length === 0) return
+  try {
+    for (const id of selectedIds.value) {
+      await axios.delete(`${apiBase}/faculty/${id}`)
+    }
+    closeBulkDeleteModal()
+    fetchFaculty()
+  } catch (error) {
+    console.error('Error bulk deleting faculty:', error)
+  }
+}
+
 const openAddModal = () => {
   showAddModal.value = true
 }
@@ -422,25 +669,29 @@ const closeAddModal = () => {
   }
 }
 
-const openDeleteModal = (faculty) => {
+const openEditModal = (faculty) => {
   selectedFaculty.value = faculty
-  showDeleteModal.value = true
-}
-
-const closeDeleteModal = () => {
-  selectedFaculty.value = null
-  showDeleteModal.value = false
-}
-
-const confirmDelete = async () => {
-  if (!selectedFaculty.value) return
-  try {
-    await axios.delete(`${apiBase}/faculty/${selectedFaculty.value.id}`)
-    closeDeleteModal()
-    fetchFaculty()
-  } catch (error) {
-    console.error('Error deleting faculty:', error)
+  editForm.value = {
+    id: faculty.id,
+    name: faculty.name,
+    citations: faculty.citations ?? null,
+    hIndex: faculty.hIndex ?? null,
+    i10Index: faculty.i10Index ?? null,
+    scholarUrl: faculty.scholarUrl ?? ''
   }
+  editErrors.value = {
+    name: '',
+    citations: '',
+    hIndex: '',
+    i10Index: '',
+    scholarUrl: ''
+  }
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  selectedFaculty.value = null
 }
 
 const closeImportSuccessModal = () => {
@@ -460,6 +711,23 @@ const isValidUrl = (value) => {
   }
 }
 
+const normalizeScholarUrl = (value) => {
+  if (!value) return ''
+  const trimmed = String(value).trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  if (trimmed.includes('scholar.google.com')) {
+    return `https://${trimmed.replace(/^\/+/, '')}`
+  }
+  return ''
+}
+
+const normalizeName = (value) =>
+  String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+
 const validateFaculty = (candidate, existingNames) => {
   const nextErrors = {
     name: '',
@@ -471,7 +739,7 @@ const validateFaculty = (candidate, existingNames) => {
 
   if (!candidate.name || !candidate.name.trim()) {
     nextErrors.name = 'Name is required.'
-  } else if (existingNames.has(candidate.name.trim().toLowerCase())) {
+  } else if (existingNames.has(normalizeName(candidate.name))) {
     nextErrors.name = 'Name already exists.'
   }
 
@@ -503,7 +771,8 @@ const validateFaculty = (candidate, existingNames) => {
   }
 
   if (candidate.scholarUrl && candidate.scholarUrl.trim()) {
-    if (!isValidUrl(candidate.scholarUrl.trim())) {
+    const normalized = normalizeScholarUrl(candidate.scholarUrl)
+    if (normalized && !isValidUrl(normalized)) {
       nextErrors.scholarUrl = 'Enter a valid URL (http/https).'
     }
   }
@@ -516,18 +785,18 @@ const hasErrors = (nextErrors) =>
 
 const submitAddForm = async () => {
   const existingNames = new Set(
-    facultyList.value.map((faculty) => faculty.name.trim().toLowerCase())
+    facultyList.value.map((faculty) => normalizeName(faculty.name))
   )
   const nextErrors = validateFaculty(form.value, existingNames)
   errors.value = nextErrors
   if (hasErrors(nextErrors)) return
   try {
     const payload = {
-      name: form.value.name.trim(),
+      name: form.value.name.trim().replace(/\s+/g, ' '),
       google_scholar_citations: form.value.citations ?? null,
       h_index: form.value.hIndex ?? null,
       i10_index: form.value.i10Index ?? null,
-      google_scholar_account: form.value.scholarUrl?.trim() || null,
+      google_scholar_account: normalizeScholarUrl(form.value.scholarUrl) || null,
       status: 'active'
     }
     await axios.post(`${apiBase}/faculty`, payload)
@@ -542,6 +811,38 @@ const submitAddForm = async () => {
     fetchFaculty()
   } catch (error) {
     console.error('Error creating faculty:', error)
+  }
+}
+
+const submitEditForm = async () => {
+  if (!editForm.value.id) return
+  const existingNames = new Set(
+    facultyList.value
+      .filter((faculty) => faculty.id !== editForm.value.id)
+      .map((faculty) => normalizeName(faculty.name))
+  )
+  const nextErrors = validateFaculty(editForm.value, existingNames)
+  editErrors.value = nextErrors
+  if (hasErrors(nextErrors)) return
+  try {
+    const payload = {
+      name: editForm.value.name.trim().replace(/\s+/g, ' '),
+      google_scholar_citations: editForm.value.citations ?? null,
+      h_index: editForm.value.hIndex ?? null,
+      i10_index: editForm.value.i10Index ?? null,
+      google_scholar_account: normalizeScholarUrl(editForm.value.scholarUrl) || null
+    }
+    await axios.put(`${apiBase}/faculty/${editForm.value.id}`, payload)
+    showEditModal.value = false
+    fetchFaculty()
+  } catch (error) {
+    console.error('Error updating faculty:', error)
+    if (error?.response?.status === 409) {
+      editErrors.value = {
+        ...editErrors.value,
+        name: 'Name already exists.'
+      }
+    }
   }
 }
 
@@ -570,6 +871,9 @@ const handleExport = () => {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+  recordAudit('faculty.export', {
+    count: rows.length
+  })
 }
 
 const normalizeHeader = (header) =>
@@ -584,7 +888,7 @@ const mapRowToFaculty = (row, headers = []) => {
       citations: row[1] !== null && row[1] !== '' && row[1] !== undefined ? Number(row[1]) : null,
       hIndex: row[2] !== null && row[2] !== '' && row[2] !== undefined ? Number(row[2]) : null,
       i10Index: row[3] !== null && row[3] !== '' && row[3] !== undefined ? Number(row[3]) : null,
-      scholarUrl: row[4] || ''
+      scholarUrl: normalizeScholarUrl(row[4])
     }
   }
 
@@ -612,7 +916,7 @@ const mapRowToFaculty = (row, headers = []) => {
     citations: toNumberOrNull(getValue(['citations', 'citation', 'googlescholarcitation'])),
     hIndex: toNumberOrNull(getValue(['hindex', 'h-index'])),
     i10Index: toNumberOrNull(getValue(['i10index', 'i-10index', 'i10'])),
-    scholarUrl: getValue(['scholarurl', 'google scholar account', 'googlescholaraccount'])
+    scholarUrl: normalizeScholarUrl(getValue(['scholarurl', 'google scholar account', 'googlescholaraccount']))
   }
 }
 
@@ -625,7 +929,9 @@ const parseCsv = (text) => {
       .map((value) => value.replace(/^"|"$/g, '').replace(/""/g, '"').trim())
   )
   const [headers, ...body] = dataRows
-  return body.map((row) => mapRowToFaculty(row, headers))
+  return body
+    .filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''))
+    .map((row) => mapRowToFaculty(row, headers))
 }
 
 const parseXlsx = async (file) => {
@@ -637,7 +943,9 @@ const parseXlsx = async (file) => {
   const json = XLSX.utils.sheet_to_json(sheet, { header: 1 })
   if (!json.length) return []
   const [headers, ...body] = json
-  return body.map((row) => mapRowToFaculty(row, headers))
+  return body
+    .filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''))
+    .map((row) => mapRowToFaculty(row, headers))
 }
 
 const handleImport = async (event) => {
@@ -656,6 +964,15 @@ const handleImport = async (event) => {
       imported = parseCsv(text)
     }
 
+    const isEmptyRow = (row) =>
+      !row.name &&
+      row.citations === null &&
+      row.hIndex === null &&
+      row.i10Index === null &&
+      !row.scholarUrl
+
+    imported = imported.filter((row) => !isEmptyRow(row))
+
     if (imported.length === 0) {
       importErrors.value = [
         {
@@ -669,9 +986,9 @@ const handleImport = async (event) => {
       return
     }
 
-    const existingNames = new Set(
-      facultyList.value.map((faculty) => faculty.name.trim().toLowerCase())
-    )
+  const existingNames = new Set(
+    facultyList.value.map((faculty) => normalizeName(faculty.name))
+  )
     const valid = []
     let invalidCount = 0
     for (let index = 0; index < imported.length; index += 1) {
@@ -686,7 +1003,7 @@ const handleImport = async (event) => {
         })
         continue
       }
-      existingNames.add(row.name.trim().toLowerCase())
+    existingNames.add(normalizeName(row.name))
       valid.push(row)
     }
     if (invalidCount > 0) {
@@ -721,6 +1038,11 @@ const handleImport = async (event) => {
     importSummary.value = `Imported ${inserted} row(s). ${invalidCount + failed} row(s) skipped.`
     showImportSuccessModal.value = inserted > 0
     showImportErrorsModal.value = importErrors.value.length > 0 || inserted === 0
+    recordAudit('faculty.import', {
+      total: imported.length,
+      inserted,
+      skipped: invalidCount + failed
+    })
     fetchFaculty()
   } catch (error) {
     console.error('Error importing faculty:', error)
@@ -735,6 +1057,17 @@ const handleImport = async (event) => {
   } finally {
     event.target.value = ''
     importing.value = false
+  }
+}
+
+const recordAudit = async (action, metadata) => {
+  try {
+    await axios.post(`${apiBase}/audit-logs/record`, {
+      action,
+      metadata
+    })
+  } catch (error) {
+    console.error('Audit log failed:', error)
   }
 }
 </script>

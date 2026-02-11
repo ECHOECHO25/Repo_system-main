@@ -31,6 +31,7 @@ class Filters extends BaseFilters
         'invalidchars'  => InvalidChars::class,
         'secureheaders' => SecureHeaders::class,
         'cors'          => \App\Filters\Cors::class,
+        'auth'          => \App\Filters\Auth::class,
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
@@ -108,5 +109,16 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = [
+        'auth' => [
+            'before' => [
+                'api/*',
+                'api'
+            ],
+            'except' => [
+                'api/auth/*',
+                'api/auth'
+            ]
+        ]
+    ];
 }

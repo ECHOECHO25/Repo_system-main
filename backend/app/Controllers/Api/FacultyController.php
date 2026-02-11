@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Models\FacultyModel;
+use App\Libraries\AuditLogger;
 use CodeIgniter\RESTful\ResourceController;
 
 class FacultyController extends ResourceController
@@ -13,7 +14,9 @@ class FacultyController extends ResourceController
     public function __construct()
     {
         // Enable CORS
-        header('Access-Control-Allow-Origin: *');
+        $origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+        header("Access-Control-Allow-Origin: {$origin}");
+        header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization');
         
@@ -35,6 +38,8 @@ class FacultyController extends ResourceController
             $college = $this->request->getGet('college');
             $page = $this->request->getGet('page') ?? 1;
             $perPage = $this->request->getGet('per_page') ?? 20;
+            $sort = $this->request->getGet('sort');
+            $order = strtolower($this->request->getGet('order') ?? 'desc');
 
             $builder = $this->model->builder();
             $builder->where('status', 'active');
@@ -54,8 +59,18 @@ class FacultyController extends ResourceController
             // Get total count
             $total = $builder->countAllResults(false);
 
+            // Sorting
+            $allowedSorts = [
+                'name' => 'name',
+                'citations' => 'google_scholar_citations',
+                'h_index' => 'h_index',
+                'i10_index' => 'i10_index'
+            ];
+            $sortColumn = $allowedSorts[$sort] ?? 'name';
+            $sortOrder = $order === 'asc' ? 'ASC' : 'DESC';
+
             // Get paginated data
-            $faculty = $builder->orderBy('name', 'ASC')
+            $faculty = $builder->orderBy($sortColumn, $sortOrder)
                               ->limit($perPage, ($page - 1) * $perPage)
                               ->get()
                               ->getResultArray();
@@ -113,6 +128,24 @@ class FacultyController extends ResourceController
     {
         try {
             $data = $this->request->getJSON(true);
+
+            if (!empty($data['name'])) {
+                $name = preg_replace('/\s+/', ' ', trim($data['name']));
+                $data['name'] = $name;
+                $builder = $this->model->builder();
+                $db = \Config\Database::connect();
+                $escapedName = $db->escape(strtolower($name));
+                $builder->where('deleted_at', null);
+                $builder->where("LOWER(TRIM(name)) = {$escapedName}", null, false);
+                $existing = $builder->get()->getRowArray();
+                if ($existing) {
+                    return $this->fail([
+                        'status' => 'error',
+                        'message' => 'Faculty name already exists',
+                        'code' => 'DUPLICATE_NAME'
+                    ], 409);
+                }
+            }
             
             if (!$this->model->insert($data)) {
                 return $this->fail([
@@ -124,6 +157,10 @@ class FacultyController extends ResourceController
 
             $id = $this->model->getInsertID();
             $faculty = $this->model->find($id);
+
+            AuditLogger::log('faculty.create', 'faculty', (int)$id, 'Faculty created', [
+                'name' => $faculty['name'] ?? null
+            ]);
 
             return $this->respondCreated([
                 'status' => 'success',
@@ -152,6 +189,25 @@ class FacultyController extends ResourceController
                 return $this->failNotFound('Faculty member not found');
             }
 
+            if (!empty($data['name'])) {
+                $name = preg_replace('/\s+/', ' ', trim($data['name']));
+                $data['name'] = $name;
+                $builder = $this->model->builder();
+                $db = \Config\Database::connect();
+                $escapedName = $db->escape(strtolower($name));
+                $builder->where('deleted_at', null);
+                $builder->where('id !=', $id);
+                $builder->where("LOWER(TRIM(name)) = {$escapedName}", null, false);
+                $existing = $builder->get()->getRowArray();
+                if ($existing) {
+                    return $this->fail([
+                        'status' => 'error',
+                        'message' => 'Faculty name already exists',
+                        'code' => 'DUPLICATE_NAME'
+                    ], 409);
+                }
+            }
+
             if (!$this->model->update($id, $data)) {
                 return $this->fail([
                     'status' => 'error',
@@ -161,6 +217,10 @@ class FacultyController extends ResourceController
             }
 
             $faculty = $this->model->find($id);
+
+            AuditLogger::log('faculty.update', 'faculty', (int)$id, 'Faculty updated', [
+                'name' => $faculty['name'] ?? null
+            ]);
 
             return $this->respond([
                 'status' => 'success',
@@ -193,6 +253,8 @@ class FacultyController extends ResourceController
                     'message' => 'Failed to delete faculty member'
                 ], 400);
             }
+
+            AuditLogger::log('faculty.delete', 'faculty', (int)$id, 'Faculty deleted');
 
             return $this->respondDeleted([
                 'status' => 'success',

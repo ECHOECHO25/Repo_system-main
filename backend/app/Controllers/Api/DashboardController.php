@@ -14,7 +14,9 @@ class DashboardController extends ResourceController
 
     public function __construct()
     {
-        header('Access-Control-Allow-Origin: *');
+        $origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+        header("Access-Control-Allow-Origin: {$origin}");
+        header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization');
         
@@ -31,6 +33,18 @@ class DashboardController extends ResourceController
     public function index()
     {
         try {
+            $cache = null;
+            $cacheKey = 'dashboard:index';
+            try {
+                $cache = \Config\Services::cache();
+                $cached = $cache->get($cacheKey);
+                if ($cached) {
+                    return $this->respond($cached);
+                }
+            } catch (\Throwable $e) {
+                $cache = null;
+            }
+
             $publicationModel = new PublicationModel();
             $facultyModel = new FacultyModel();
             $trackingModel = new TrackingLogModel();
@@ -117,7 +131,7 @@ class DashboardController extends ResourceController
                 ]
             ];
 
-            return $this->respond([
+            $payload = [
                 'status' => 'success',
                 'data' => [
                     'kpis' => $kpis,
@@ -129,7 +143,17 @@ class DashboardController extends ResourceController
                     'recent_activity' => $recentLogs,
                     'last_updated' => date('Y-m-d H:i:s')
                 ]
-            ]);
+            ];
+
+            if ($cache) {
+                try {
+                    $cache->save($cacheKey, $payload, 60);
+                } catch (\Throwable $e) {
+                    // Ignore cache errors
+                }
+            }
+
+            return $this->respond($payload);
             
         } catch (\Exception $e) {
             return $this->fail([
@@ -146,10 +170,22 @@ class DashboardController extends ResourceController
     public function publicationsSummary()
     {
         try {
+            $cache = null;
+            $cacheKey = 'dashboard:publications-summary';
+            try {
+                $cache = \Config\Services::cache();
+                $cached = $cache->get($cacheKey);
+                if ($cached) {
+                    return $this->respond($cached);
+                }
+            } catch (\Throwable $e) {
+                $cache = null;
+            }
+
             $publicationModel = new PublicationModel();
             $stats = $publicationModel->getStatistics();
 
-            return $this->respond([
+            $payload = [
                 'status' => 'success',
                 'data' => [
                     'total' => $stats['total_publications'],
@@ -157,7 +193,17 @@ class DashboardController extends ResourceController
                     'by_type' => $stats['by_type'],
                     'by_college' => $stats['by_college']
                 ]
-            ]);
+            ];
+
+            if ($cache) {
+                try {
+                    $cache->save($cacheKey, $payload, 60);
+                } catch (\Throwable $e) {
+                    // Ignore cache errors
+                }
+            }
+
+            return $this->respond($payload);
             
         } catch (\Exception $e) {
             return $this->fail([
@@ -174,13 +220,25 @@ class DashboardController extends ResourceController
     public function facultyMetrics()
     {
         try {
+            $cache = null;
+            $cacheKey = 'dashboard:faculty-metrics';
+            try {
+                $cache = \Config\Services::cache();
+                $cached = $cache->get($cacheKey);
+                if ($cached) {
+                    return $this->respond($cached);
+                }
+            } catch (\Throwable $e) {
+                $cache = null;
+            }
+
             $facultyModel = new FacultyModel();
             $metrics = $facultyModel->getMetrics();
             $topCitations = $facultyModel->getTopByCitations(5);
             $topHIndex = $facultyModel->getTopByHIndex(5);
             $inactiveFaculty = $facultyModel->getInactiveFaculty([2024, 2025]);
 
-            return $this->respond([
+            $payload = [
                 'status' => 'success',
                 'data' => [
                     'metrics' => $metrics,
@@ -189,7 +247,17 @@ class DashboardController extends ResourceController
                     'inactive_faculty_count' => count($inactiveFaculty),
                     'inactive_faculty' => array_slice($inactiveFaculty, 0, 10)
                 ]
-            ]);
+            ];
+
+            if ($cache) {
+                try {
+                    $cache->save($cacheKey, $payload, 60);
+                } catch (\Throwable $e) {
+                    // Ignore cache errors
+                }
+            }
+
+            return $this->respond($payload);
             
         } catch (\Exception $e) {
             return $this->fail([
@@ -206,20 +274,42 @@ class DashboardController extends ResourceController
     public function activity()
     {
         try {
-            $trackingModel = new TrackingLogModel();
             $days = $this->request->getGet('days') ?? 30;
+            $cacheKey = 'dashboard:activity:' . $days;
+            $cache = null;
+            try {
+                $cache = \Config\Services::cache();
+                $cached = $cache->get($cacheKey);
+                if ($cached) {
+                    return $this->respond($cached);
+                }
+            } catch (\Throwable $e) {
+                $cache = null;
+            }
+
+            $trackingModel = new TrackingLogModel();
             
             $stats = $trackingModel->getActivityStats($days);
             $recentLogs = $trackingModel->getRecent(20);
 
-            return $this->respond([
+            $payload = [
                 'status' => 'success',
                 'data' => [
                     'stats' => $stats,
                     'recent_logs' => $recentLogs,
                     'period_days' => $days
                 ]
-            ]);
+            ];
+
+            if ($cache) {
+                try {
+                    $cache->save($cacheKey, $payload, 60);
+                } catch (\Throwable $e) {
+                    // Ignore cache errors
+                }
+            }
+
+            return $this->respond($payload);
             
         } catch (\Exception $e) {
             return $this->fail([

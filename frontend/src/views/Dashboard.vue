@@ -58,22 +58,46 @@
 
     <section id="dashboard" class="mt-16 grid gap-6 lg:grid-cols-[0.95fr_1.05fr] xl:grid-cols-[0.9fr_1.1fr] 2xl:grid-cols-[0.85fr_1.15fr]">
       <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Alert Center</div>
-        <h2 class="mt-4 text-2xl font-semibold">Data quality at a glance</h2>
+        <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Faculty Snapshot</div>
+        <h2 class="mt-4 text-2xl font-semibold">Faculty data at a glance</h2>
         <p class="mt-3 text-sm text-slate-300">
-          Surface missing H-index values, low citation profiles, and inactive publication streaks.
+          Coverage overview of scholar profiles, citations, and index completeness.
         </p>
         <div class="mt-6 grid gap-3">
-          <div
-            v-for="alert in dashboardData.alerts"
-            :key="alert.type"
-            class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
-          >
+          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
             <div>
-              <p class="text-sm font-semibold">{{ alert.type }}</p>
-              <p class="text-xs text-slate-400">{{ alert.description }}</p>
+              <p class="text-sm font-semibold">Total faculty</p>
+              <p class="text-xs text-slate-400">Active faculty profiles</p>
             </div>
-            <span class="text-2xl font-semibold" :class="alertCountClass(alert)">{{ alert.count }}</span>
+            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.total_faculty }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+            <div>
+              <p class="text-sm font-semibold">With scholar profile</p>
+              <p class="text-xs text-slate-400">Linked Google Scholar accounts</p>
+            </div>
+            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.with_profile }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+            <div>
+              <p class="text-sm font-semibold">Missing citations</p>
+              <p class="text-xs text-slate-400">No citation count recorded</p>
+            </div>
+            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.missing_citations }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+            <div>
+              <p class="text-sm font-semibold">Missing H-index</p>
+              <p class="text-xs text-slate-400">No H-index recorded</p>
+            </div>
+            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.missing_h_index }}</span>
+          </div>
+          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+            <div>
+              <p class="text-sm font-semibold">Missing i-10 index</p>
+              <p class="text-xs text-slate-400">No i-10 index recorded</p>
+            </div>
+            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.missing_i10_index }}</span>
           </div>
         </div>
       </div>
@@ -136,50 +160,6 @@
           </div>
         </div>
 
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-semibold">Faculty Snapshot</h2>
-            <span class="text-xs uppercase tracking-[0.22em] text-slate-500">metrics</span>
-          </div>
-          <div class="mt-5 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Total faculty</p>
-              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.total_faculty }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">With scholar profile</p>
-              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.with_profile }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Missing citations</p>
-              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.missing_citations }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Missing H-index</p>
-              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.missing_h_index }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:col-span-2">
-              <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Missing i-10 index</p>
-              <p class="mt-2 text-2xl font-semibold">{{ facultyMetrics.metrics.missing_i10_index }}</p>
-            </div>
-          </div>
-          <div class="mt-6">
-            <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Top citations</div>
-            <div class="mt-3 space-y-2">
-              <div
-                v-for="faculty in topFacultyByCitations"
-                :key="faculty.name"
-                class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-sm"
-              >
-                <span class="text-slate-200">{{ faculty.name }}</span>
-                <span class="text-slate-400">{{ faculty.google_scholar_citations ?? '-' }}</span>
-              </div>
-              <div v-if="topFacultyByCitations.length === 0" class="text-sm text-slate-500">
-                No citation data available.
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -241,7 +221,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
-            <tr v-for="college in dashboardData.publications_by_college" :key="college.college_institute">
+            <tr v-for="college in publicationsByCollegeTop" :key="college.college_institute">
               <td class="py-3 text-slate-200">{{ college.college_institute }}</td>
               <td class="py-3 text-right font-semibold text-white">{{ college.count }}</td>
             </tr>
@@ -350,6 +330,9 @@ export default {
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b));
     },
+    publicationsByCollegeTop() {
+      return (this.dashboardData.publications_by_college || []).slice(0, 10);
+    },
     topFacultyByCitations() {
       return this.facultyMetrics.top_by_citations || [];
     }
@@ -440,8 +423,17 @@ export default {
 
       const typeCtx = this.$refs.typeChart?.getContext('2d');
       if (typeCtx && this.dashboardData.publications_by_type?.length) {
-        const typeLabels = this.dashboardData.publications_by_type.map(t => t.publication_type || 'Unknown');
-        const typeCounts = this.dashboardData.publications_by_type.map(t => Number(t.count) || 0);
+        const normalizedTypes = this.dashboardData.publications_by_type.reduce((acc, item) => {
+          const raw = item.publication_type || 'Unknown';
+          const key = raw.trim().toLowerCase();
+          if (!acc[key]) {
+            acc[key] = { label: raw.trim(), count: 0 };
+          }
+          acc[key].count += Number(item.count) || 0;
+          return acc;
+        }, {});
+        const typeLabels = Object.values(normalizedTypes).map(t => t.label || 'Unknown');
+        const typeCounts = Object.values(normalizedTypes).map(t => t.count);
         this.charts.publicationType = new Chart(typeCtx, {
           type: 'doughnut',
           data: {
@@ -482,9 +474,7 @@ export default {
         const others = sorted.slice(topLimit);
         const otherTotal = others.reduce((sum, row) => sum + row.count, 0);
 
-        if (otherTotal > 0) {
-          top.push({ college: 'Other', count: otherTotal });
-        }
+        // Do not append "Other" bucket
 
         const labels = top.map(item => item.college);
         const data = top.map(item => item.count);

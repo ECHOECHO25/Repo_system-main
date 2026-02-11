@@ -11,6 +11,11 @@ $routes->options('api', 'Home::options');
 $routes->options('api/(:any)', 'Home::options');
 
 $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) {
+    // Auth
+    $routes->post('auth/login', 'AuthController::login');
+    $routes->post('auth/logout', 'AuthController::logout');
+    $routes->get('auth/me', 'AuthController::me');
+
     // Dashboard
     $routes->get('dashboard', 'DashboardController::index');
     $routes->get('dashboard/publications-summary', 'DashboardController::publicationsSummary');
@@ -35,4 +40,8 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) 
     $routes->post('faculty', 'FacultyController::create');
     $routes->put('faculty/(:num)', 'FacultyController::update/$1');
     $routes->delete('faculty/(:num)', 'FacultyController::delete/$1');
+
+    // Audit logs
+    $routes->get('audit-logs', 'AuditLogsController::index');
+    $routes->post('audit-logs/record', 'AuditLogsController::record');
 });

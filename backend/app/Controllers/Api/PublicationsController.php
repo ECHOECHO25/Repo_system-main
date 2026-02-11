@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Models\PublicationModel;
+use App\Libraries\AuditLogger;
 use CodeIgniter\RESTful\ResourceController;
 
 class PublicationsController extends ResourceController
@@ -12,7 +13,9 @@ class PublicationsController extends ResourceController
 
     public function __construct()
     {
-        header('Access-Control-Allow-Origin: *');
+        $origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+        header("Access-Control-Allow-Origin: {$origin}");
+        header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization');
         
@@ -148,6 +151,11 @@ class PublicationsController extends ResourceController
             $id = $this->model->getInsertID();
             $publication = $this->model->find($id);
 
+            AuditLogger::log('publication.create', 'publication', (int)$id, 'Publication created', [
+                'title' => $publication['title'] ?? null,
+                'year' => $publication['year'] ?? null
+            ]);
+
             return $this->respondCreated([
                 'status' => 'success',
                 'message' => 'Publication created successfully',
@@ -202,6 +210,11 @@ class PublicationsController extends ResourceController
 
             $publication = $this->model->find($id);
 
+            AuditLogger::log('publication.update', 'publication', (int)$id, 'Publication updated', [
+                'title' => $publication['title'] ?? null,
+                'year' => $publication['year'] ?? null
+            ]);
+
             return $this->respond([
                 'status' => 'success',
                 'message' => 'Publication updated successfully',
@@ -233,6 +246,8 @@ class PublicationsController extends ResourceController
                     'message' => 'Failed to delete publication'
                 ], 400);
             }
+
+            AuditLogger::log('publication.delete', 'publication', (int)$id, 'Publication deleted');
 
             return $this->respondDeleted([
                 'status' => 'success',
@@ -337,6 +352,13 @@ class PublicationsController extends ResourceController
                     ];
                 }
             }
+
+            AuditLogger::log('publication.import', 'publication', null, 'Publications imported', [
+                'total' => count($publications),
+                'inserted' => $inserted,
+                'failed' => $failed,
+                'duplicates' => $duplicates
+            ]);
 
             return $this->respond([
                 'status' => 'success',

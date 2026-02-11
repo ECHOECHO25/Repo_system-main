@@ -10,7 +10,9 @@ class Cors implements FilterInterface
 {
     public function before(RequestInterface $request, $arguments = null)
     {
-        header("Access-Control-Allow-Origin: *");
+        $origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+        header("Access-Control-Allow-Origin: {$origin}");
+        header("Access-Control-Allow-Credentials: true");
         header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization");
         header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 
