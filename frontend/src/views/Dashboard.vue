@@ -1,281 +1,386 @@
 <template>
-  <main class="mx-auto w-full max-w-none px-6 pb-16 pt-10 md:px-10 2xl:px-20 2xl:pb-24">
-    <section class="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] xl:grid-cols-[1.2fr_0.8fr] 2xl:grid-cols-[1.25fr_0.75fr]">
-      <div>
-        <p class="inline-flex items-center rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs uppercase tracking-[0.28em] text-slate-400">
-          Live research intelligence
-        </p>
-        <h1 class="mt-6 text-4xl font-black leading-tight text-white md:text-5xl">
-          Monitor BSU research outputs with clarity, speed, and trust.
+  <main class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <!-- Hero Header Section -->
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <!-- System Status Badge -->
+      <div class="mb-6">
+        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 backdrop-blur-sm">
+          <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+          <span class="text-xs font-medium uppercase tracking-wider text-emerald-300">
+            Live System
+          </span>
+        </div>
+      </div>
+
+      <!-- Main Title and Description -->
+      <div class="mb-12">
+        <h1 class="mb-4 text-4xl font-bold text-white md:text-5xl lg:text-6xl">
+          Publications & Citations Monitoring
         </h1>
-        <p class="mt-4 max-w-xl text-base text-slate-300">
-          A single homepage for KPIs, publication insights, and faculty performance. Built for accurate tracking,
-          clean reporting, and fast decision-making.
+        <p class="mb-4 max-w-3xl text-lg leading-relaxed text-slate-300">
+          Comprehensive research tracking system for Benguet State University. Monitor publications, 
+          citations, and research impact across all colleges, institutes, and research centers in real-time.
         </p>
-        <div class="mt-8 flex flex-wrap gap-3">
-          <button
-            class="rounded-lg bg-lime-300 px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-lime-200"
-            @click="refreshData"
-          >
-            Refresh dashboard
-          </button>
-          <button class="rounded-lg border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-100 hover:border-slate-400">
-            View publications
-          </button>
-        </div>
-        <div class="mt-8 flex flex-wrap gap-6 text-xs uppercase tracking-[0.24em] text-slate-500">
-          <span>2017-2025 Coverage</span>
-          <span>Real-time KPIs</span>
-          <span>Export-ready</span>
-        </div>
-      </div>
-
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <div class="flex items-center justify-between text-xs uppercase tracking-[0.22em] text-slate-400">
-          <span>Dashboard Snapshot</span>
-          <span class="rounded-full bg-green-500/10 px-3 py-1 text-green-300">Updated {{ dashboardData.last_updated || '-' }}</span>
-        </div>
-        <div class="mt-6 grid gap-4 md:grid-cols-2">
-          <div
-            v-for="kpi in topKpis"
-            :key="kpi.label"
-            class="rounded-2xl bg-slate-950/70 p-4"
-          >
-            <p class="text-xs uppercase tracking-[0.22em] text-slate-500">{{ kpi.label }}</p>
-            <p class="mt-3 text-3xl font-semibold">{{ kpi.value }}</p>
-          </div>
-          <div v-if="loading" class="rounded-2xl bg-slate-950/70 p-4 md:col-span-2">
-            <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Loading KPIs</p>
-            <p class="mt-3 text-lg text-slate-400">Fetching live metrics...</p>
-          </div>
-        </div>
-        <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-          <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Publications Trend</div>
-          <div class="mt-3 h-24 rounded-xl bg-gradient-to-r from-green-500/20 via-lime-400/20 to-yellow-400/20"></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="dashboard" class="mt-16 grid gap-6 lg:grid-cols-[0.95fr_1.05fr] xl:grid-cols-[0.9fr_1.1fr] 2xl:grid-cols-[0.85fr_1.15fr]">
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-        <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Faculty Snapshot</div>
-        <h2 class="mt-4 text-2xl font-semibold">Faculty data at a glance</h2>
-        <p class="mt-3 text-sm text-slate-300">
-          Coverage overview of scholar profiles, citations, and index completeness.
+        <p class="max-w-3xl text-sm leading-relaxed text-slate-400">
+          This dashboard consolidates data from REPO submissions, provides ISO-compliant reporting, 
+          supports accreditation requirements, and enables data-driven decision making for research 
+          management and performance evaluation.
         </p>
-        <div class="mt-6 grid gap-3">
-          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-            <div>
-              <p class="text-sm font-semibold">Total faculty</p>
-              <p class="text-xs text-slate-400">Active faculty profiles</p>
+      </div>
+      <br>
+
+      <!-- Quick Stats Cards -->
+      <div class="mb-12">
+        <div class="mb-6">
+          <h2 class="mb-2 text-2xl font-bold text-white">Key Performance Indicators</h2>
+          <p class="text-sm text-slate-400">
+            Real-time overview of critical research metrics across all academic units.
+          </p>
+        </div>
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div v-for="kpi in topKpis" :key="kpi.label" 
+               class="group relative overflow-hidden rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm transition-all hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10">
+            <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br from-emerald-500/10 to-transparent blur-2xl"></div>
+            <div class="relative">
+              <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                {{ kpi.label }}
+              </p>
+              <p class="mb-3 text-4xl font-bold text-white">
+                {{ kpi.value || 0 }}
+              </p>
+              <p class="text-xs leading-relaxed text-slate-500">
+                {{ getKpiDescription(kpi.label) }}
+              </p>
             </div>
-            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.total_faculty }}</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-            <div>
-              <p class="text-sm font-semibold">With scholar profile</p>
-              <p class="text-xs text-slate-400">Linked Google Scholar accounts</p>
-            </div>
-            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.with_profile }}</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-            <div>
-              <p class="text-sm font-semibold">Missing citations</p>
-              <p class="text-xs text-slate-400">No citation count recorded</p>
-            </div>
-            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.missing_citations }}</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-            <div>
-              <p class="text-sm font-semibold">Missing H-index</p>
-              <p class="text-xs text-slate-400">No H-index recorded</p>
-            </div>
-            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.missing_h_index }}</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-            <div>
-              <p class="text-sm font-semibold">Missing i-10 index</p>
-              <p class="text-xs text-slate-400">No i-10 index recorded</p>
-            </div>
-            <span class="text-2xl font-semibold text-slate-100">{{ facultyMetrics.metrics.missing_i10_index }}</span>
           </div>
         </div>
       </div>
 
-      <div class="grid gap-6">
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-semibold">Recent Activity</h2>
-            <span class="text-xs uppercase tracking-[0.22em] text-slate-500">System logs</span>
+      <!-- Loading State -->
+      <div v-if="loading" class="flex items-center justify-center rounded-2xl border border-slate-700/50 bg-slate-800/30 p-16">
+        <div class="text-center">
+          <div class="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-emerald-500/20 border-t-emerald-500"></div>
+          <p class="mb-2 text-sm font-medium text-slate-300">Loading Dashboard Data</p>
+          <p class="text-xs text-slate-500">Fetching latest metrics from database...</p>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div v-else>
+        <!-- Charts Section -->
+         <br>
+        <div class="mb-12">
+          <div class="mb-6">
+            <h2 class="mb-2 text-2xl font-bold text-white">Research Analytics</h2>
+            <p class="text-sm text-slate-400">
+              Visual representation of publication trends and distribution patterns to identify growth areas and institutional strengths.
+            </p>
           </div>
-          <div class="mt-6 overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead class="text-left text-xs uppercase tracking-[0.22em] text-slate-500">
-                <tr>
-                  <th class="pb-3">Date</th>
-                  <th class="pb-3">Action</th>
-                  <th class="pb-3">Description</th>
-                  <th class="pb-3">User</th>
-                  <th class="pb-3 text-right">Status</th>
+          <div class="grid gap-6 lg:grid-cols-2">
+            <!-- Yearly Trends Chart -->
+            <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+              <div class="mb-6">
+                <h3 class="mb-2 text-xl font-bold text-white">Publication Trends Over Time</h3>
+                <p class="mb-4 text-sm leading-relaxed text-slate-400">
+                  Year-over-year publication growth analysis showing research output trajectory. 
+                  This trend helps identify peak production years and forecast future targets.
+                </p>
+              </div>
+              <div class="relative h-72">
+                <canvas ref="yearlyTrendsChart"></canvas>
+              </div>
+              <div class="mt-4 border-t border-slate-700/50 pt-4">
+                <p class="text-xs leading-relaxed text-slate-500">
+                  Upward trends indicate increasing research activity. Use this data to validate 
+                  annual reports and set realistic growth targets.
+                </p>
+              </div>
+            </div>
+
+            <!-- Publication Types Chart -->
+            <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+              <div class="mb-6">
+                <h3 class="mb-2 text-xl font-bold text-white">Publication Type Distribution</h3>
+                <p class="mb-4 text-sm leading-relaxed text-slate-400">
+                  Breakdown of publications by format including journals, conference papers, books, 
+                  and other scholarly outputs to ensure balanced research portfolio.
+                </p>
+              </div>
+              <div class="relative h-72">
+                <canvas ref="typeChart"></canvas>
+              </div>
+              <div class="mt-4 border-t border-slate-700/50 pt-4">
+                <p class="text-xs leading-relaxed text-slate-500">
+                  A healthy research portfolio typically includes 60-70% journal articles, 20-25% 
+                  conference proceedings, and 10-15% books or chapters.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+<br>
+        <!-- Faculty Metrics Section -->
+        <div class="mb-12 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+          <div class="mb-6">
+            <h2 class="mb-2 text-2xl font-bold text-white">Faculty Research Profile</h2>
+            <p class="mb-4 text-sm leading-relaxed text-slate-400">
+              Comprehensive overview of faculty research metrics including Google Scholar profiles, 
+              citation counts, H-index, and i-10 index. These indicators help identify research leaders 
+              and opportunities for faculty development.
+            </p>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-slate-400">Total Active Faculty</p>
+                  <p class="mt-2 text-3xl font-bold text-white">{{ facultyMetrics.metrics.total_faculty || 0 }}</p>
+                </div>
+                <div class="rounded-lg bg-blue-500/10 p-3">
+                  <svg class="h-7 w-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p class="text-xs leading-relaxed text-slate-500">
+                Faculty members registered with active research profiles
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-slate-400">With Google Scholar Profile</p>
+                  <p class="mt-2 text-3xl font-bold text-white">{{ facultyMetrics.metrics.with_profile || 0 }}</p>
+                </div>
+                <div class="rounded-lg bg-green-500/10 p-3">
+                  <svg class="h-7 w-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p class="text-xs leading-relaxed text-slate-500">
+                Linked accounts for automatic citation tracking
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-slate-400">Missing H-Index Data</p>
+                  <p class="mt-2 text-3xl font-bold text-white">{{ facultyMetrics.metrics.missing_h_index || 0 }}</p>
+                </div>
+                <div class="rounded-lg bg-yellow-500/10 p-3">
+                  <svg class="h-7 w-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+              <p class="text-xs leading-relaxed text-slate-500">
+                Profiles without H-index measuring research productivity
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-slate-400">Missing Citation Counts</p>
+                  <p class="mt-2 text-3xl font-bold text-white">{{ facultyMetrics.metrics.missing_citations || 0 }}</p>
+                </div>
+                <div class="rounded-lg bg-orange-500/10 p-3">
+                  <svg class="h-7 w-7 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p class="text-xs leading-relaxed text-slate-500">
+                Profiles without citation data indicating research influence
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-slate-400">Missing i-10 Index</p>
+                  <p class="mt-2 text-3xl font-bold text-white">{{ facultyMetrics.metrics.missing_i10_index || 0 }}</p>
+                </div>
+                <div class="rounded-lg bg-red-500/10 p-3">
+                  <svg class="h-7 w-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p class="text-xs leading-relaxed text-slate-500">
+                Profiles missing i-10 index showing sustained impact
+              </p>
+            </div>
+          </div>
+        </div>
+<br>
+        <!-- College Trends -->
+        <div class="mb-12 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+          <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div class="flex-1">
+              <h2 class="mb-2 text-2xl font-bold text-white">College-Specific Trends</h2>
+              <p class="text-sm leading-relaxed text-slate-400">
+                Compare publication trends across different colleges and institutes. Track performance 
+                over time to identify high-performing units and areas needing support.
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="text-sm font-medium text-slate-400">Select College:</label>
+              <select
+                v-model="selectedCollege"
+                @change="renderCollegeTrend"
+                class="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-white shadow-sm transition-colors hover:border-emerald-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="">All Colleges</option>
+                <option v-for="college in collegeOptions" :key="college" :value="college">
+                  {{ college }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="relative h-80">
+            <canvas ref="collegeTrendChart"></canvas>
+          </div>
+        </div>
+<br>
+        <!-- Publications by College Chart -->
+        <div class="mb-12 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+          <div class="mb-6">
+            <h2 class="mb-2 text-2xl font-bold text-white">Publications by College</h2>
+            <p class="text-sm leading-relaxed text-slate-400">
+              Top contributing colleges and institutes ranked by total publication output.
+            </p>
+          </div>
+          <div class="relative h-96">
+            <canvas ref="collegeYearChart"></canvas>
+          </div>
+        </div>
+<br>
+        <!-- Detailed Publications Table -->
+        <div class="mb-12 rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+          <div class="mb-6">
+            <h2 class="mb-2 text-2xl font-bold text-white">Detailed College Rankings</h2>
+            <p class="text-sm leading-relaxed text-slate-400">
+              Complete breakdown of publication counts by college with percentage contribution 
+              to total institutional output.
+            </p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-slate-700">
+                  <th class="pb-3 text-left text-sm font-semibold text-slate-300">Rank</th>
+                  <th class="pb-3 text-left text-sm font-semibold text-slate-300">College/Institute</th>
+                  <th class="pb-3 text-right text-sm font-semibold text-slate-300">Publications</th>
+                  <th class="pb-3 text-right text-sm font-semibold text-slate-300">Percentage</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800">
-                <tr v-for="log in dashboardData.recent_activity" :key="log.id">
-                  <td class="py-3 text-slate-300">{{ formatDate(log.created_at) }}</td>
-                  <td class="py-3">
-                    <span class="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-200">
-                      {{ log.action_type }}
-                    </span>
+              <tbody class="divide-y divide-slate-700/50">
+                <tr v-for="(college, index) in publicationsByCollegeTop" :key="college.college_institute" 
+                    class="transition-colors hover:bg-slate-800/30">
+                  <td class="py-4 text-sm text-slate-400">
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold">{{ index + 1 }}</span>
+                      <span v-if="index === 0" class="text-yellow-400">🥇</span>
+                      <span v-else-if="index === 1" class="text-slate-300">🥈</span>
+                      <span v-else-if="index === 2" class="text-orange-400">🥉</span>
+                    </div>
                   </td>
-                  <td class="py-3 text-slate-200">{{ log.description }}</td>
-                  <td class="py-3 text-slate-300">{{ log.updated_by }}</td>
-                  <td class="py-3 text-right">
-                    <span class="rounded-full bg-green-500/10 px-3 py-1 text-xs text-green-200">
-                      {{ log.status }}
-                    </span>
+                  <td class="py-4 text-sm font-medium text-white">
+                    {{ college.college_institute }}
                   </td>
-                </tr>
-                <tr v-if="!dashboardData.recent_activity?.length">
-                  <td colspan="5" class="py-6 text-center text-xs uppercase tracking-[0.22em] text-slate-500">
-                    No recent activity logged.
+                  <td class="py-4 text-right text-sm font-bold text-emerald-400">
+                    {{ college.count }}
+                  </td>
+                  <td class="py-4 text-right text-sm text-slate-400">
+                    {{ calculatePercentage(college.count) }}%
                   </td>
                 </tr>
               </tbody>
+              <tfoot class="border-t-2 border-slate-700">
+                <tr>
+                  <td colspan="2" class="py-4 text-sm font-bold text-white">TOTAL</td>
+                  <td class="py-4 text-right text-sm font-bold text-emerald-400">
+                    {{ totalPublications }}
+                  </td>
+                  <td class="py-4 text-right text-sm font-bold text-slate-300">100%</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
+<br>
+        <!-- Quick Action Cards -->
+        <div class="mb-12">
+          <div class="mb-6">
+            <h2 class="mb-2 text-2xl font-bold text-white">System Features</h2>
+            <p class="text-sm text-slate-400">
+              Quick access to key features for managing publications, faculty profiles, and generating reports.
+            </p>
+          </div>
+          <div class="grid gap-6 sm:grid-cols-3">
+            <div class="group cursor-pointer rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm transition-all hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10">
+              <div class="mb-4 inline-flex rounded-lg bg-blue-500/10 p-3">
+                <svg class="h-8 w-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">Publications Database</h3>
+              <p class="text-sm leading-relaxed text-slate-400">
+                Browse, search, and filter all research publications with advanced filtering by year, 
+                college, type, and keywords.
+              </p>
+            </div>
 
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-          <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Fast actions</div>
-          <div class="mt-4 grid gap-3 sm:grid-cols-3">
-            <button class="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm font-semibold hover:border-slate-600">
-              Import Excel
-            </button>
-            <button class="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm font-semibold hover:border-slate-600">
-              Add publication
-            </button>
-            <button class="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm font-semibold hover:border-slate-600">
-              Export report
-            </button>
+            <div class="group cursor-pointer rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm transition-all hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10">
+              <div class="mb-4 inline-flex rounded-lg bg-green-500/10 p-3">
+                <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">Faculty Profiles</h3>
+              <p class="text-sm leading-relaxed text-slate-400">
+                Manage researcher profiles including Google Scholar integration, H-index tracking, 
+                citation counts, and publication history.
+              </p>
+            </div>
+
+            <div class="group cursor-pointer rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm transition-all hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10">
+              <div class="mb-4 inline-flex rounded-lg bg-purple-500/10 p-3">
+                <svg class="h-8 w-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 class="mb-2 text-lg font-semibold text-white">Reports & Analytics</h3>
+              <p class="text-sm leading-relaxed text-slate-400">
+                Generate comprehensive reports in PDF, Excel, or CSV formats for administrative use, 
+                accreditation requirements, and strategic planning.
+              </p>
+            </div>
           </div>
         </div>
-
-      </div>
-    </section>
-
-    <section class="mt-16 grid gap-6 lg:grid-cols-2">
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <h2 class="text-lg font-semibold">Yearly Publication Trend</h2>
-        <div class="relative mt-4 h-72">
-          <canvas id="yearlyTrendsChart" ref="yearlyTrendsChart" class="h-full w-full"></canvas>
+<br>
+        <!-- System Information Footer -->
+        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-6 backdrop-blur-sm">
+          <div class="flex flex-wrap items-center justify-between gap-4 text-center sm:text-left">
+            <div>
+              <p class="mb-1 text-sm font-medium text-slate-300">System Status</p>
+              <p class="text-xs text-slate-500">All systems operational</p>
+            </div>
+            <div>
+              <p class="mb-1 text-sm font-medium text-slate-300">Last Updated</p>
+              <p class="text-xs text-slate-500">{{ dashboardData.last_updated || 'Never' }}</p>
+            </div>
+            <div>
+              <p class="mb-1 text-sm font-medium text-slate-300">Total Records</p>
+              <p class="text-xs text-slate-500">{{ totalPublications }} publications</p>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <h2 class="text-lg font-semibold">Publication Types</h2>
-        <div class="relative mt-4 h-72">
-          <canvas id="typeChart" ref="typeChart" class="h-full w-full"></canvas>
-        </div>
-      </div>
-    </section>
-
-    
-    <section class="mt-16 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-      <div class="flex items-center justify-between gap-4">
-        <h2 class="text-lg font-semibold">Publications by College/Institute</h2>
-        <span class="text-xs uppercase tracking-[0.22em] text-slate-500">Total count</span>
-      </div>
-      <div class="relative mt-4 h-80">
-        <canvas id="collegeYearChart" ref="collegeYearChart" class="h-full w-full"></canvas>
-      </div>
-    </section>
-
-    <section class="mt-16 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <h2 class="text-lg font-semibold">Yearly Publications by College</h2>
-        <div class="flex items-center gap-3">
-          <label class="text-xs uppercase tracking-[0.22em] text-slate-500">College</label>
-          <select
-            v-model="selectedCollege"
-            class="rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
-            @change="renderCollegeTrend"
-          >
-            <option value="">All Colleges</option>
-            <option v-for="college in collegeOptions" :key="college" :value="college">{{ college }}</option>
-          </select>
-        </div>
-      </div>
-      <div class="relative mt-4 h-72">
-        <canvas id="collegeTrendChart" ref="collegeTrendChart" class="h-full w-full"></canvas>
-      </div>
-    </section>
-
-
-    <section class="mt-16 rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-          <h2 class="text-lg font-semibold">Total Publications by College</h2>
-      <div class="mt-4 overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="text-left text-xs uppercase tracking-[0.22em] text-slate-500">
-            <tr>
-              <th class="pb-3">College/Institute</th>
-              <th class="pb-3 text-right">Publications</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800">
-            <tr v-for="college in publicationsByCollegeTop" :key="college.college_institute">
-              <td class="py-3 text-slate-200">{{ college.college_institute }}</td>
-              <td class="py-3 text-right font-semibold text-white">{{ college.count }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="publications" class="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Publications</p>
-        <h3 class="mt-4 text-xl font-semibold">Smart filtering and search</h3>
-        <p class="mt-2 text-sm text-slate-300">
-          Slice records by year, college, category, or citation count. Find results instantly with multi-field
-          search.
-        </p>
-      </div>
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Faculty</p>
-        <h3 class="mt-4 text-xl font-semibold">Researcher performance</h3>
-        <p class="mt-2 text-sm text-slate-300">
-          Track H-index, citations, and scholar profiles. Highlight top performers and data gaps in one view.
-        </p>
-      </div>
-      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-        <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Reports</p>
-        <h3 class="mt-4 text-xl font-semibold">Export-ready analytics</h3>
-        <p class="mt-2 text-sm text-slate-300">
-          Generate publication summaries, trend charts, and audit trails for internal reviews.
-        </p>
-      </div>
-    </section>
-
-    <section id="reports" class="mt-16 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-8">
-      <div class="flex flex-wrap items-center justify-between gap-6">
-        <div>
-          <h2 class="text-3xl font-semibold">Ready to launch your REMIS portal?</h2>
-          <p class="mt-2 max-w-2xl text-sm text-slate-300">
-            Use the data already collected to create a searchable, reliable, and export-ready research system.
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <button class="rounded-lg bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-200">
-            Start with Excel import
-          </button>
-          <button class="rounded-lg border border-slate-600 px-5 py-3 text-sm font-semibold hover:border-slate-400">
-            Contact admin
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <div class="mt-10 text-right text-xs uppercase tracking-[0.22em] text-slate-500">
-      Last updated: {{ dashboardData.last_updated }}
     </div>
   </main>
 </template>
@@ -293,12 +398,10 @@ export default {
       loading: true,
       dashboardData: {
         kpis: [],
-        alerts: [],
         yearly_trends: [],
         publications_by_type: [],
         publications_by_college: [],
         publications_by_college_year: [],
-        recent_activity: [],
         last_updated: ''
       },
       facultyMetrics: {
@@ -308,8 +411,7 @@ export default {
           missing_citations: 0,
           missing_h_index: 0,
           missing_i10_index: 0
-        },
-        top_by_citations: []
+        }
       },
       charts: {
         yearlyTrends: null,
@@ -333,8 +435,9 @@ export default {
     publicationsByCollegeTop() {
       return (this.dashboardData.publications_by_college || []).slice(0, 10);
     },
-    topFacultyByCitations() {
-      return this.facultyMetrics.top_by_citations || [];
+    totalPublications() {
+      return (this.dashboardData.publications_by_college || [])
+        .reduce((sum, college) => sum + (Number(college.count) || 0), 0);
     }
   },
   mounted() {
@@ -347,18 +450,16 @@ export default {
       try {
         const response = await axios.get(`${apiBase}/dashboard`);
         this.dashboardData = response.data.data;
-
-        // Wait for DOM update before rendering charts
         this.$nextTick(() => {
           this.renderCharts();
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        alert('Failed to load dashboard data');
       } finally {
         this.loading = false;
       }
     },
+
     async fetchFacultyMetrics() {
       try {
         const response = await axios.get(`${apiBase}/dashboard/faculty-metrics`);
@@ -368,151 +469,168 @@ export default {
       }
     },
 
-    renderCharts() {
-      requestAnimationFrame(() => {
-      Chart.defaults.color = '#cbd5f5';
-      Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.2)';
+    getKpiDescription(label) {
+      const descriptions = {
+        'Total Publications': 'Cumulative count of all research outputs recorded',
+        'Publications 2025': 'Current year publication count',
+        'Total Faculty': 'Active faculty members with research profiles',
+        'Avg H-Index': 'Average H-index indicating overall research impact',
+        'Total Citations': 'Sum of all citations received'
+      };
+      return descriptions[label] || 'Real-time metric from database';
+    },
 
-      // Yearly Trends Chart
+    calculatePercentage(count) {
+      if (!this.totalPublications) return 0;
+      return ((count / this.totalPublications) * 100).toFixed(1);
+    },
+
+    renderCharts() {
+      this.renderYearlyTrends();
+      this.renderPublicationType();
+      this.renderCollegeYearChart();
+      this.renderCollegeTrend();
+    },
+
+    renderYearlyTrends() {
       if (this.charts.yearlyTrends) {
         this.charts.yearlyTrends.destroy();
       }
 
-      const yearlyCtx = this.$refs.yearlyTrendsChart?.getContext('2d');
-      if (yearlyCtx && this.dashboardData.yearly_trends?.length) {
-        const yearlyLabels = this.dashboardData.yearly_trends.map(t => t.year);
-        const yearlyCounts = this.dashboardData.yearly_trends.map(t => Number(t.count) || 0);
-        this.charts.yearlyTrends = new Chart(yearlyCtx, {
-          type: 'line',
-          data: {
-            labels: yearlyLabels,
-            datasets: [{
-              label: 'Publications',
-              data: yearlyCounts,
-              borderColor: 'rgb(132, 204, 22)',
-              backgroundColor: 'rgba(132, 204, 22, 0.2)',
-              tension: 0.1
-            }]
+      const ctx = this.$refs.yearlyTrendsChart?.getContext('2d');
+      if (!ctx || !this.dashboardData.yearly_trends?.length) return;
+
+      this.charts.yearlyTrends = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: this.dashboardData.yearly_trends.map(t => t.year),
+          datasets: [{
+            label: 'Publications',
+            data: this.dashboardData.yearly_trends.map(t => Number(t.count) || 0),
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              padding: 12,
+              titleColor: '#f1f5f9',
+              bodyColor: '#cbd5e1',
+              borderColor: 'rgba(148, 163, 184, 0.2)',
+              borderWidth: 1
+            }
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false
-              }
+          scales: {
+            x: {
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#94a3b8' }
             },
-            scales: {
-              x: {
-                ticks: { color: '#cbd5f5' },
-                grid: { color: 'rgba(148, 163, 184, 0.2)' }
-              },
-              y: {
-                ticks: { color: '#cbd5f5' },
-                grid: { color: 'rgba(148, 163, 184, 0.2)' }
-              }
+            y: {
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#94a3b8' }
             }
           }
-        });
-      }
+        }
+      });
+    },
 
-      // Publication Type Chart
+    renderPublicationType() {
       if (this.charts.publicationType) {
         this.charts.publicationType.destroy();
       }
 
-      const typeCtx = this.$refs.typeChart?.getContext('2d');
-      if (typeCtx && this.dashboardData.publications_by_type?.length) {
-        const normalizedTypes = this.dashboardData.publications_by_type.reduce((acc, item) => {
-          const raw = item.publication_type || 'Unknown';
-          const key = raw.trim().toLowerCase();
-          if (!acc[key]) {
-            acc[key] = { label: raw.trim(), count: 0 };
-          }
-          acc[key].count += Number(item.count) || 0;
-          return acc;
-        }, {});
-        const typeLabels = Object.values(normalizedTypes).map(t => t.label || 'Unknown');
-        const typeCounts = Object.values(normalizedTypes).map(t => t.count);
-        this.charts.publicationType = new Chart(typeCtx, {
-          type: 'doughnut',
-          data: {
-            labels: typeLabels,
-            datasets: [{
-              data: typeCounts,
-              backgroundColor: [
-                'rgba(22, 101, 52, 0.85)',
-                'rgba(132, 204, 22, 0.85)',
-                'rgba(234, 179, 8, 0.85)',
-                'rgba(163, 163, 163, 0.85)',
-                'rgba(253, 224, 71, 0.85)'
-              ]
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false
-          }
-        });
-      }
+      const ctx = this.$refs.typeChart?.getContext('2d');
+      if (!ctx || !this.dashboardData.publications_by_type?.length) return;
 
-      // College per Year Chart
+      this.charts.publicationType = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: this.dashboardData.publications_by_type.map(t => t.publication_type),
+          datasets: [{
+            data: this.dashboardData.publications_by_type.map(t => Number(t.count) || 0),
+            backgroundColor: [
+              'rgba(59, 130, 246, 0.8)',
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+              'rgba(239, 68, 68, 0.8)',
+              'rgba(139, 92, 246, 0.8)',
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#cbd5e1', padding: 15 }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              padding: 12,
+              titleColor: '#f1f5f9',
+              bodyColor: '#cbd5e1'
+            }
+          }
+        }
+      });
+    },
+
+    renderCollegeYearChart() {
       if (this.charts.collegeYear) {
         this.charts.collegeYear.destroy();
       }
 
-      const collegeCtx = this.$refs.collegeYearChart?.getContext('2d');
-      if (collegeCtx && this.dashboardData.publications_by_college?.length) {
-        const raw = this.dashboardData.publications_by_college.map(row => ({
-          college: row.college_institute || 'Unknown',
-          count: Number(row.count) || 0
-        }));
+      const ctx = this.$refs.collegeYearChart?.getContext('2d');
+      if (!ctx || !this.dashboardData.publications_by_college?.length) return;
 
-        const sorted = [...raw].sort((a, b) => b.count - a.count);
-        const topLimit = 12;
-        const top = sorted.slice(0, topLimit);
-        const others = sorted.slice(topLimit);
-        const otherTotal = others.reduce((sum, row) => sum + row.count, 0);
+      const sorted = [...this.dashboardData.publications_by_college]
+        .sort((a, b) => (Number(b.count) || 0) - (Number(a.count) || 0))
+        .slice(0, 12);
 
-        // Do not append "Other" bucket
-
-        const labels = top.map(item => item.college);
-        const data = top.map(item => item.count);
-
-        this.charts.collegeYear = new Chart(collegeCtx, {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Publications',
-              data,
-              backgroundColor: 'rgba(132, 204, 22, 0.7)',
-              borderColor: 'rgba(132, 204, 22, 0.95)',
-              borderWidth: 1
-            }]
+      this.charts.collegeYear = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sorted.map(item => item.college_institute),
+          datasets: [{
+            label: 'Publications',
+            data: sorted.map(item => Number(item.count) || 0),
+            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              padding: 12
+            }
           },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false }
+          scales: {
+            x: {
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#94a3b8' }
             },
-            scales: {
-              x: {
-                ticks: { color: '#cbd5f5' },
-                grid: { color: 'rgba(148, 163, 184, 0.2)' }
-              },
-              y: {
-                ticks: { color: '#cbd5f5' },
-                grid: { display: false }
-              }
+            y: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8' }
             }
           }
-        });
-      }
-
-      this.renderCollegeTrend();
+        }
       });
     },
 
@@ -521,101 +639,89 @@ export default {
         this.charts.collegeTrend.destroy();
       }
 
-      const trendCtx = this.$refs.collegeTrendChart?.getContext('2d');
+      const ctx = this.$refs.collegeTrendChart?.getContext('2d');
       const raw = this.dashboardData.publications_by_college_year || [];
-      if (!trendCtx || !raw.length) {
-        return;
-      }
+      if (!ctx || !raw.length) return;
 
-      const normalized = raw.map(row => ({
-        year: Number(row.year),
-        college: row.college_institute || 'Unknown',
-        count: Number(row.count) || 0
-      }));
-
-      const years = [...new Set(normalized.map(r => r.year))].sort((a, b) => a - b);
+      const years = [...new Set(raw.map(r => Number(r.year)))].sort((a, b) => a - b);
       const filtered = this.selectedCollege
-        ? normalized.filter(r => r.college === this.selectedCollege)
-        : normalized;
+        ? raw.filter(r => r.college_institute === this.selectedCollege)
+        : raw;
 
       const byYear = years.map(year => {
         return filtered
-          .filter(r => r.year === year)
-          .reduce((sum, row) => sum + row.count, 0);
+          .filter(r => Number(r.year) === year)
+          .reduce((sum, row) => sum + (Number(row.count) || 0), 0);
       });
 
-      this.charts.collegeTrend = new Chart(trendCtx, {
+      this.charts.collegeTrend = new Chart(ctx, {
         type: 'line',
         data: {
           labels: years,
           datasets: [{
             label: this.selectedCollege || 'All Colleges',
             data: byYear,
-            borderColor: 'rgba(59, 130, 246, 0.9)',
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-            tension: 0.2,
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
             fill: true,
-            pointRadius: 3
+            pointRadius: 4,
+            pointHoverRadius: 6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              padding: 12
+            }
           },
           scales: {
             x: {
-              ticks: { color: '#cbd5f5' },
-              grid: { color: 'rgba(148, 163, 184, 0.2)' }
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#94a3b8' }
             },
             y: {
-              ticks: { color: '#cbd5f5' },
-              grid: { color: 'rgba(148, 163, 184, 0.2)' }
+              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              ticks: { color: '#94a3b8' }
             }
           }
         }
       });
-    },
-
-    refreshData() {
-      this.fetchDashboardData();
-    },
-
-    formatDate(date) {
-      return new Date(date).toLocaleString();
-    },
-
-    alertCountClass(alert) {
-      if (alert.severity === 'warning') {
-        return 'text-yellow-200';
-      }
-      if (alert.severity === 'info') {
-        return 'text-lime-200';
-      }
-      return 'text-slate-200';
     }
   },
   beforeUnmount() {
-    if (this.charts.yearlyTrends) {
-      this.charts.yearlyTrends.destroy();
-    }
-    if (this.charts.publicationType) {
-      this.charts.publicationType.destroy();
-    }
-    if (this.charts.collegeYear) {
-      this.charts.collegeYear.destroy();
-    }
-    if (this.charts.collegeTrend) {
-      this.charts.collegeTrend.destroy();
-    }
+    Object.values(this.charts).forEach(chart => {
+      if (chart) chart.destroy();
+    });
   }
 }
 </script>
 
 <style scoped>
-canvas {
-  width: 100% !important;
-  height: 100% !important;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
 </style>

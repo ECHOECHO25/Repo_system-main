@@ -12,6 +12,7 @@ class AuditLogsController extends ResourceController
     private array $allowedActions = [
         'login',
         'logout',
+        'user.create',
         'faculty.create',
         'faculty.update',
         'faculty.delete',
@@ -42,7 +43,7 @@ class AuditLogsController extends ResourceController
     {
         try {
             $page = $this->request->getGet('page') ?? 1;
-            $perPage = $this->request->getGet('per_page') ?? 20;
+            $perPage = $this->request->getGet('per_page') ?? 10;
             $search = $this->request->getGet('search');
 
             $model = new AuditLogModel();

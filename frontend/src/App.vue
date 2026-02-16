@@ -37,8 +37,16 @@
             </router-link>
           </div>
         </div>
-        <div class="flex justify-end text-xs uppercase tracking-[0.3em] text-slate-400">
-          {{ currentTime }}
+        <div class="flex items-center justify-end gap-3 text-xs uppercase tracking-[0.3em] text-slate-400">
+          <span>{{ currentTime }}</span>
+          <button
+            v-if="!isAuthenticated"
+            type="button"
+            class="rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
+            @click="$router.push('/login')"
+          >
+            Login
+          </button>
         </div>
       </nav>
 
@@ -85,7 +93,7 @@
 
       <nav class="mt-8 space-y-2">
         <router-link
-          v-for="item in menuItems"
+          v-for="item in filteredMenuItems"
           :key="item.path"
           :to="item.path"
           class="flex items-center gap-3 rounded-2xl border border-transparent px-4 py-3 text-sm uppercase tracking-[0.22em] text-slate-300 transition hover:border-emerald-400 hover:text-white"
@@ -97,7 +105,7 @@
         </router-link>
       </nav>
 
-      <div class="mt-8 border-t border-slate-800 pt-4">
+      <div v-if="isAuthenticated" class="mt-8 border-t border-slate-800 pt-4">
         <button
           type="button"
           class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm uppercase tracking-[0.22em] text-slate-300 transition hover:bg-slate-900/60 hover:text-white"
@@ -114,6 +122,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import { useAuth } from './composables/useAuth'
 import {
   Bars3Icon,
   ChartBarIcon,
@@ -126,15 +135,29 @@ const currentTime = ref(new Date().toLocaleString())
 const sidebarOpen = ref(false)
 const route = useRoute()
 const isLoginRoute = computed(() => route.path === '/login')
+const { isAuthenticated, role, checkAuth, clearUser } = useAuth()
 
 const menuItems = [
   { name: 'Dashboard', path: '/dashboard', icon: ChartBarIcon, showTop: true },
   { name: 'Publications', path: '/publications', icon: DocumentTextIcon, showTop: true },
   { name: 'Faculty', path: '/faculty', icon: UserGroupIcon, showTop: true },
-  { name: 'Audit Logs', path: '/audit-logs', icon: DocumentTextIcon, showTop: false }
+  { name: 'Audit Logs', path: '/audit-logs', icon: DocumentTextIcon, showTop: false, requiresAuth: true },
+  { name: 'Add User', path: '/add-user', icon: UserGroupIcon, showTop: false, requiresAdmin: true }
 ]
 
-const topMenuItems = computed(() => menuItems.filter((item) => item.showTop))
+const filteredMenuItems = computed(() =>
+  menuItems.filter((item) => {
+    if (item.requiresAdmin) {
+      return isAuthenticated.value && role.value === 'admin'
+    }
+    if (item.requiresAuth) {
+      return isAuthenticated.value
+    }
+    return true
+  })
+)
+
+const topMenuItems = computed(() => filteredMenuItems.value.filter((item) => item.showTop))
 
 let timer
 
@@ -152,10 +175,12 @@ const handleLogout = async () => {
   } catch {
     // ignore
   }
+  clearUser()
   window.location.href = '/login'
 }
 
 onMounted(() => {
+  checkAuth()
   timer = setInterval(() => {
     currentTime.value = new Date().toLocaleString()
   }, 1000)

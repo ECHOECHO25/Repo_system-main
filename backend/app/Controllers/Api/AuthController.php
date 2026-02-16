@@ -27,6 +27,17 @@ class AuthController extends ResourceController
     public function login()
     {
         try {
+            $session = session();
+            $lockUntil = (int)($session->get('login_lock_until') ?? 0);
+            $now = time();
+            if ($lockUntil > $now) {
+                $remaining = $lockUntil - $now;
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => "Too many attempts. Try again in {$remaining} second(s)."
+                ], 429);
+            }
+
             $data = $this->request->getJSON(true);
             $username = trim((string)($data['username'] ?? ''));
             $password = (string)($data['password'] ?? '');
@@ -38,15 +49,27 @@ class AuthController extends ResourceController
             $model = new UserModel();
             $user = $model->where('username', $username)->where('status', 'active')->first();
             if (!$user || !password_verify($password, $user['password_hash'])) {
+                $attempts = (int)($session->get('login_attempts') ?? 0);
+                $attempts++;
+                $session->set('login_attempts', $attempts);
+                if ($attempts >= 5) {
+                    $cooldown = 60;
+                    $session->set('login_lock_until', $now + $cooldown);
+                    $session->set('login_attempts', 0);
+                    return $this->fail([
+                        'status' => 'error',
+                        'message' => "Too many attempts. Try again in {$cooldown} second(s)."
+                    ], 429);
+                }
                 return $this->fail(['status' => 'error', 'message' => 'Invalid credentials'], 401);
             }
 
-            $session = session();
             $session->set([
                 'user_id' => $user['id'],
                 'username' => $user['username'],
                 'role' => $user['role']
             ]);
+            $session->remove(['login_attempts', 'login_lock_until']);
 
             AuditLogger::log('login', 'user', (int)$user['id'], 'User logged in');
 

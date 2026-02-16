@@ -11,8 +11,24 @@ class Auth implements FilterInterface
     public function before(RequestInterface $request, $arguments = null)
     {
         $path = trim($request->getPath(), '/');
+        $method = strtolower($request->getMethod());
+
+        if ($method === 'options') {
+            return;
+        }
         if ($path === 'api/auth' || str_starts_with($path, 'api/auth/')) {
             return;
+        }
+        if ($method === 'get') {
+            if (str_starts_with($path, 'api/dashboard')) {
+                return;
+            }
+            if (str_starts_with($path, 'api/publications')) {
+                return;
+            }
+            if (str_starts_with($path, 'api/faculty')) {
+                return;
+            }
         }
 
         $session = session();

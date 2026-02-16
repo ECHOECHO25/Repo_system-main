@@ -10,14 +10,16 @@ import Publications from './views/Publications.vue'
 import Faculty from './views/Faculty.vue'
 import Login from './views/Login.vue'
 import AuditLogs from './views/AuditLogs.vue'
+import AddUser from './views/AddUser.vue'
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
   { path: '/login', component: Login },
-  { path: '/dashboard', component: Dashboard, meta: { requiresAuth: true } },
-  { path: '/publications', component: Publications, meta: { requiresAuth: true } },
-  { path: '/faculty', component: Faculty, meta: { requiresAuth: true } },
-  { path: '/audit-logs', component: AuditLogs, meta: { requiresAuth: true } }
+  { path: '/dashboard', component: Dashboard },
+  { path: '/publications', component: Publications },
+  { path: '/faculty', component: Faculty },
+  { path: '/audit-logs', component: AuditLogs, meta: { requiresAuth: true } },
+  { path: '/add-user', component: AddUser, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

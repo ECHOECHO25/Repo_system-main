@@ -16,33 +16,35 @@
           class="hidden"
           @change="handleFileChange"
         >
-        <button
-          class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200 hover:border-slate-500"
-          :disabled="importing"
-          @click="triggerImport"
-        >
-          {{ importing ? 'Importing...' : 'Import Excel' }}
-        </button>
-        <button
-          class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200 hover:border-slate-500"
-          :disabled="exporting"
-          @click="openExportModal"
-        >
-          {{ exporting ? 'Exporting...' : 'Export Excel' }}
-        </button>
-        <button
-          class="rounded-full border border-red-400/40 px-4 py-2 text-xs uppercase tracking-[0.28em] text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="selectedIds.length === 0"
-          @click="openBulkDeleteModal"
-        >
-          Delete
-        </button>
-        <button
-          class="rounded-full bg-lime-300 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-900 hover:bg-lime-200"
-          @click="showAddModal"
-        >
-          Add publication
-        </button>
+        <template v-if="isAuthenticated">
+          <button
+            class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200 hover:border-slate-500"
+            :disabled="importing"
+            @click="triggerImport"
+          >
+            {{ importing ? 'Importing...' : 'Import Excel' }}
+          </button>
+          <button
+            class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200 hover:border-slate-500"
+            :disabled="exporting"
+            @click="openExportModal"
+          >
+            {{ exporting ? 'Exporting...' : 'Export Excel' }}
+          </button>
+          <button
+            class="rounded-full border border-red-400/40 px-4 py-2 text-xs uppercase tracking-[0.28em] text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="selectedIds.length === 0"
+            @click="openBulkDeleteModal"
+          >
+            Delete
+          </button>
+          <button
+            class="rounded-full bg-lime-300 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-900 hover:bg-lime-200"
+            @click="showAddModal"
+          >
+            Add publication
+          </button>
+        </template>
       </div>
     </div>
 
@@ -105,7 +107,7 @@
             <table class="w-full table-fixed text-sm">
               <thead class="sticky top-0 z-10 bg-slate-950/90 text-left text-xs uppercase tracking-[0.24em] text-slate-400">
                 <tr>
-                  <th class="px-4 py-3 w-10">
+                  <th v-if="isAuthenticated" class="px-4 py-3 w-10">
                     <input
                       type="checkbox"
                       class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -119,7 +121,7 @@
                   <th class="px-4 py-3 w-24">Type</th>
                   <th class="px-4 py-3">College</th>
                   <th class="px-4 py-3 w-28 text-right">Citations</th>
-                  <th class="px-4 py-3 w-44 text-right">Actions</th>
+                  <th v-if="isAuthenticated" class="px-4 py-3 w-44 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
@@ -128,7 +130,7 @@
                   :key="pub.id"
                   class="transition hover:bg-slate-900/60"
                 >
-                  <td class="px-4 py-5 align-top">
+                  <td v-if="isAuthenticated" class="px-4 py-5 align-top">
                     <input
                       type="checkbox"
                       class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -182,7 +184,7 @@
                     </span>
                     <span class="text-slate-500" v-else>-</span>
                   </td>
-                  <td class="px-4 py-5 align-top text-right">
+                  <td v-if="isAuthenticated" class="px-4 py-5 align-top text-right">
                     <div class="flex flex-wrap justify-end gap-2">
                       <button
                         class="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500"
@@ -234,7 +236,7 @@
                   Citations: {{ pub.citations || 0 }}
                 </span>
               </div>
-              <div class="mt-4 flex flex-wrap items-center gap-2">
+              <div v-if="isAuthenticated" class="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   class="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500"
                   @click="viewPublication(pub)"
@@ -426,8 +428,10 @@
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import PublicationModal from '../components/PublicationModal.vue';
+import { useAuth } from '../composables/useAuth';
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const auth = useAuth();
 
 export default {
   name: 'Publications',
@@ -490,6 +494,9 @@ export default {
     }
   },
   computed: {
+    isAuthenticated() {
+      return auth.isAuthenticated.value;
+    },
     visiblePages() {
       const pages = [];
       const current = this.pagination.current_page;

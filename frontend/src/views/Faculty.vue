@@ -24,41 +24,43 @@
         </div>
         <div class="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.3em] text-slate-500">
           <span>{{ pagination.total || filteredFaculty.length }} results</span>
-          <button
-            type="button"
-            class="rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
-            @click="openAddModal"
-          >
-            Add
-          </button>
-          <label
-            class="cursor-pointer rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            :class="{ 'pointer-events-none opacity-60': importing }"
-          >
-            {{ importing ? 'Importing...' : 'Import CSV/XLSX' }}
-            <input
-              type="file"
-              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              class="hidden"
-              :disabled="importing"
-              @change="handleImport"
-            />
-          </label>
-          <button
-            type="button"
-            class="rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
-            @click="handleExport"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            class="rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-rose-200 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="selectedIds.length === 0"
-            @click="openBulkDeleteModal"
-          >
-             Delete
-          </button>
+          <template v-if="isAuthenticated">
+            <button
+              type="button"
+              class="rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
+              @click="openAddModal"
+            >
+              Add
+            </button>
+            <label
+              class="cursor-pointer rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              :class="{ 'pointer-events-none opacity-60': importing }"
+            >
+              {{ importing ? 'Importing...' : 'Import CSV/XLSX' }}
+              <input
+                type="file"
+                accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                class="hidden"
+                :disabled="importing"
+                @change="handleImport"
+              />
+            </label>
+            <button
+              type="button"
+              class="rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
+              @click="handleExport"
+            >
+              Export CSV
+            </button>
+            <button
+              type="button"
+              class="rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-rose-200 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="selectedIds.length === 0"
+              @click="openBulkDeleteModal"
+            >
+              Delete
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -68,7 +70,7 @@
         <table class="w-full text-left text-sm text-slate-200">
           <thead class="bg-slate-900/90 text-xs uppercase tracking-[0.22em] text-slate-400">
             <tr>
-              <th class="px-4 py-4">
+              <th v-if="isAuthenticated" class="px-4 py-4">
                 <input
                   type="checkbox"
                   class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -96,7 +98,7 @@
                 </button>
               </th>
               <th class="px-4 py-4">Scholar Profile</th>
-              <th class="px-4 py-4 text-right">Action</th>
+              <th v-if="isAuthenticated" class="px-4 py-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +107,7 @@
               :key="faculty.id || faculty.name"
               class="border-t border-slate-800/70"
             >
-              <td class="px-4 py-4">
+              <td v-if="isAuthenticated" class="px-4 py-4">
                 <input
                   type="checkbox"
                   class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -129,7 +131,7 @@
                 </a>
                 <span v-else class="text-slate-500">-</span>
               </td>
-              <td class="px-4 py-4 text-right">
+              <td v-if="isAuthenticated" class="px-4 py-4 text-right">
                 <button
                   type="button"
                   class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.3em] text-emerald-200 hover:border-emerald-300"
@@ -140,7 +142,7 @@
               </td>
             </tr>
             <tr v-if="filteredFaculty.length === 0">
-              <td class="px-4 py-6 text-slate-400" colspan="7">
+              <td class="px-4 py-6 text-slate-400" :colspan="isAuthenticated ? 7 : 5">
                 No matches found. Try a different spelling.
               </td>
             </tr>
@@ -474,8 +476,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import * as XLSX from 'xlsx'
+import { useAuth } from '../composables/useAuth'
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const { isAuthenticated } = useAuth()
 
 const query = ref('')
 const showAddModal = ref(false)

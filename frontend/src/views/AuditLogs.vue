@@ -95,7 +95,7 @@ const loading = ref(false)
 const search = ref('')
 const pagination = ref({
   current_page: 1,
-  per_page: 20,
+  per_page: 10,
   total: 0,
   total_pages: 0
 })

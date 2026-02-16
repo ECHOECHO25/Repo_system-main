@@ -44,4 +44,7 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) 
     // Audit logs
     $routes->get('audit-logs', 'AuditLogsController::index');
     $routes->post('audit-logs/record', 'AuditLogsController::record');
+
+    // Users
+    $routes->post('users', 'UsersController::create');
 });
