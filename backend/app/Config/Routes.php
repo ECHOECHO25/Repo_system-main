@@ -47,4 +47,11 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) 
 
     // Users
     $routes->post('users', 'UsersController::create');
+
+    // Acknowledgements
+    $routes->get('acknowledgements', 'AcknowledgementsController::index');
+    $routes->get('acknowledgements/(:num)', 'AcknowledgementsController::show/$1');
+    $routes->post('acknowledgements', 'AcknowledgementsController::create');
+    $routes->put('acknowledgements/(:num)', 'AcknowledgementsController::update/$1');
+    $routes->delete('acknowledgements/(:num)', 'AcknowledgementsController::delete/$1');
 });

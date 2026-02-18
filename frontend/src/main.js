@@ -11,6 +11,7 @@ import Faculty from './views/Faculty.vue'
 import Login from './views/Login.vue'
 import AuditLogs from './views/AuditLogs.vue'
 import AddUser from './views/AddUser.vue'
+import Acknowledgements from './views/Acknowledgements.vue'
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -19,6 +20,7 @@ const routes = [
   { path: '/publications', component: Publications },
   { path: '/faculty', component: Faculty },
   { path: '/audit-logs', component: AuditLogs, meta: { requiresAuth: true } },
+  { path: '/acknowledgements', component: Acknowledgements },
   { path: '/add-user', component: AddUser, meta: { requiresAuth: true } }
 ]
 

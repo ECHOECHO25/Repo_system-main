@@ -12,7 +12,7 @@ class UsersSeeder extends Seeder
 
         $this->db->table('users')->insert([
             'username' => 'admin',
-            'password_hash' => $password,
+            'password_hash' => $password,  
             'role' => 'admin',
             'status' => 'active',
             'created_at' => date('Y-m-d H:i:s'),

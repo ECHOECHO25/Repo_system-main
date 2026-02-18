@@ -29,6 +29,9 @@ class Auth implements FilterInterface
             if (str_starts_with($path, 'api/faculty')) {
                 return;
             }
+            if (str_starts_with($path, 'api/acknowledgements')) {
+                return;
+            }
         }
 
         $session = session();
