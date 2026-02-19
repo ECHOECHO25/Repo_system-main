@@ -81,4 +81,73 @@ class UsersController extends ResourceController
             return $this->fail(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function index()
+    {
+        try {
+            $session = session();
+            $role = $session->get('role');
+            if ($role !== 'admin') {
+                return $this->fail(['status' => 'error', 'message' => 'Forbidden'], 403);
+            }
+
+            $model = new UserModel();
+            $rows = $model->select('id, username, role, status, created_at')
+                ->orderBy('created_at', 'DESC')
+                ->findAll();
+
+            return $this->respond([
+                'status' => 'success',
+                'data' => $rows
+            ]);
+        } catch (\Exception $e) {
+            return $this->fail(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update($id = null)
+    {
+        try {
+            $session = session();
+            $role = $session->get('role');
+            if ($role !== 'admin') {
+                return $this->fail(['status' => 'error', 'message' => 'Forbidden'], 403);
+            }
+
+            if (!$id) {
+                return $this->fail(['status' => 'error', 'message' => 'User id required'], 400);
+            }
+
+            $data = $this->request->getJSON(true);
+            $status = isset($data['status']) ? trim((string)$data['status']) : null;
+
+            if ($status !== null && !in_array($status, ['active', 'inactive'], true)) {
+                return $this->fail(['status' => 'error', 'message' => 'Invalid status'], 400);
+            }
+
+            if ($status === null) {
+                return $this->fail(['status' => 'error', 'message' => 'Nothing to update'], 400);
+            }
+
+            $model = new UserModel();
+            if (!$model->find($id)) {
+                return $this->failNotFound('User not found');
+            }
+
+            if (!$model->update($id, ['status' => $status])) {
+                return $this->fail(['status' => 'error', 'message' => 'Failed to update user', 'errors' => $model->errors()], 400);
+            }
+
+            \App\Libraries\AuditLogger::log('user.update', 'user', (int)$id, 'User status updated', [
+                'status' => $status
+            ]);
+
+            return $this->respond([
+                'status' => 'success',
+                'message' => 'User updated'
+            ]);
+        } catch (\Exception $e) {
+            return $this->fail(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 }

@@ -63,6 +63,7 @@
               <td class="px-4 py-3">{{ row.remarksLabel || '-' }}</td>
               <td class="px-4 py-3">
                 <button
+                  v-if="isAuthenticated"
                   type="button"
                   class="mr-2 rounded border border-emerald-500/70 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-200 hover:border-emerald-400"
                   @click="printRecord(row)"
@@ -393,11 +394,10 @@
             />
           </label>
           <label class="text-sm">
-            <span class="mb-1 block text-xs uppercase tracking-[0.16em] text-slate-400">Time *</span>
+            <span class="mb-1 block text-xs uppercase tracking-[0.16em] text-slate-400">Time (optional)</span>
             <input
               v-model="editForm.time_issued"
               type="time"
-              required
               class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
             />
           </label>
@@ -655,6 +655,8 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
 
+const logoUrl = new URL('../assets/logo-bsu.jpg', import.meta.url).href
+
 const printRecord = (row) => {
   const popup = window.open('', '_blank', 'width=900,height=700')
   if (!popup) return
@@ -675,12 +677,14 @@ const printRecord = (row) => {
           body { font-family: Arial, sans-serif; margin: 0; color: #111; }
           .sheet { border: 1px solid #777; padding: 14px; min-height: 270mm; box-sizing: border-box; }
           .top { display: grid; grid-template-columns: 1fr 270px; gap: 8px; }
-          .brand { border: 1px solid #888; padding: 8px; text-align: center; }
-          .brand-title { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
-          .brand-sub { font-size: 24px; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
+          .brand { padding: 4px 0 10px; }
+          .brand-inner { display: flex; align-items: center; gap: 14px; }
+          .brand-logo { width: 64px; height: 64px; object-fit: contain; }
+          .brand-title { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+          .brand-sub { font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
           .meta table, .main table, .items, .signatures table { width: 100%; border-collapse: collapse; }
           .meta td, .meta th, .main td, .main th, .items td, .items th, .signatures td {
-            border: 1px solid #888; padding: 6px 8px; font-size: 13px; vertical-align: top;
+            border: 1px solid #c9c9c9; padding: 6px 8px; font-size: 13px; vertical-align: top;
           }
           .meta th, .main th, .items th { background: #f8f8f8; text-transform: uppercase; letter-spacing: .6px; font-size: 12px; }
           .main { margin-top: 10px; }
@@ -701,8 +705,13 @@ const printRecord = (row) => {
         <div class="sheet">
           <div class="top">
             <div class="brand">
-              <div class="brand-title">MJSIR</div>
-              <div class="brand-sub">ACKNOWLEDGEMENT</div>
+              <div class="brand-inner">
+                <img class="brand-logo" src="${logoUrl}" alt="BSU logo" />
+                <div>
+                  <div class="brand-title">MJSIR</div>
+                  <div class="brand-sub">ACKNOWLEDGEMENT</div>
+                </div>
+              </div>
             </div>
             <div class="meta">
               <table>
@@ -933,18 +942,18 @@ const createRow = async () => {
   pageError.value = ''
   pageMessage.value = ''
   try {
-    if (!form.value.date_issued || !form.value.time_issued) {
-      submitError.value = 'Please select both date and time.'
+    if (!form.value.date_issued) {
+      submitError.value = 'Please select a date.'
       return
     }
 
     const datePattern = /^\d{4}-\d{2}-\d{2}$/
-    const timePattern = /^\d{2}:\d{2}$/
     if (!datePattern.test(form.value.date_issued)) {
       submitError.value = 'Use date format YYYY-MM-DD.'
       return
     }
-    if (!timePattern.test(form.value.time_issued)) {
+    const timePattern = /^\d{2}:\d{2}$/
+    if (form.value.time_issued && !timePattern.test(form.value.time_issued)) {
       submitError.value = 'Use time format HH:MM.'
       return
     }
@@ -1063,10 +1072,10 @@ const submitEditRecord = async () => {
     return
   }
 
-  if (!editForm.value.date_issued || !editForm.value.time_issued) {
-    submitError.value = 'Date and Time are required.'
-    return
-  }
+    if (!editForm.value.date_issued) {
+      submitError.value = 'Date is required.'
+      return
+    }
 
   for (let i = 0; i < editForm.value.items.length; i++) {
     const item = editForm.value.items[i]

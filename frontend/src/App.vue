@@ -15,6 +15,10 @@
           <Bars3Icon class="h-5 w-5" />
         </button>
 
+        <div class="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-transparent p-1">
+          <img src="/src/assets/logo_repo.png" alt="REPO logo" class="h-full w-full object-contain" />
+        </div>
+
         <div>
           <div class="text-xs uppercase tracking-[0.32em] text-slate-400">
             BSU REMIS
@@ -26,8 +30,15 @@
       </div>
 
       <!-- Right -->
-      <div class="text-xs uppercase tracking-[0.3em] text-slate-400">
-        {{ currentTime }}
+      <div class="flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-slate-400">
+        <span>{{ currentTime }}</span>
+        <button
+          v-if="!isAuthenticated"
+          class="rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
+          @click="$router.push('/login')"
+        >
+          Login
+        </button>
       </div>
     </nav>
 
@@ -54,12 +65,17 @@
     >
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
-        <div>
-          <div class="text-xs uppercase tracking-[0.32em] text-slate-400">
-            BSU REMIS
+        <div class="flex items-center gap-3">
+          <div class="grid h-12 w-12 place-items-center overflow-hidden rounded-full bg-transparent p-1">
+            <img src="/src/assets/logo_repo.png" alt="REPO logo" class="h-full w-full object-contain" />
           </div>
-          <div class="text-lg font-semibold">
-            Dashboard Menu
+          <div>
+            <div class="text-xs uppercase tracking-[0.32em] text-slate-400">
+              BSU REMIS
+            </div>
+            <div class="text-lg font-semibold">
+              Dashboard Menu
+            </div>
           </div>
         </div>
 
@@ -151,11 +167,21 @@ const menuItems = [
   { name: 'Publications', path: '/publications', icon: DocumentTextIcon },
   { name: 'Faculty', path: '/faculty', icon: UserGroupIcon },
   { name: 'Acknowledgements', path: '/acknowledgements', icon: BookOpenIcon },
-  { name: 'Audit Logs', path: '/audit-logs', icon: ClockIcon },
-  { name: 'Add User', path: '/add-user', icon: UserPlusIcon }
+  { name: 'Audit Logs', path: '/audit-logs', icon: ClockIcon, requiresAuth: true },
+  { name: 'Add User', path: '/add-user', icon: UserPlusIcon, requiresAdmin: true }
 ]
 
-const filteredMenuItems = computed(() => menuItems)
+const filteredMenuItems = computed(() =>
+  menuItems.filter((item) => {
+    if (item.requiresAdmin) {
+      return isAuthenticated.value && role.value === 'admin'
+    }
+    if (item.requiresAuth) {
+      return isAuthenticated.value
+    }
+    return true
+  })
+)
 
 const toggleSidebar = () => (sidebarOpen.value = !sidebarOpen.value)
 const closeSidebar = () => (sidebarOpen.value = false)
@@ -167,7 +193,7 @@ const handleLogout = async () => {
   clearUser()
   window.location.href = '/login'
 }
-
+ 
 onMounted(() => {
   checkAuth()
   timer = setInterval(() => {
