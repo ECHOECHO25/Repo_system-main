@@ -4,7 +4,7 @@
     <!-- ================= NAVBAR ================= -->
     <nav
       v-if="!isLoginRoute"
-      class="mx-auto flex items-center justify-between px-6 py-6"
+      class="mx-auto flex flex-wrap items-center justify-between gap-4 px-6 py-6"
     >
       <!-- Left -->
       <div class="flex items-center gap-3">
@@ -26,6 +26,23 @@
           <div class="text-lg font-semibold">
             Research Monitoring System
           </div>
+        </div>
+      </div>
+
+      <!-- Center Tabs -->
+      <div class="order-3 w-full lg:order-none lg:w-auto">
+        <div class="flex flex-wrap items-center justify-start gap-2 rounded-full border border-slate-800 bg-slate-950/60 p-1 text-xs uppercase tracking-[0.28em] text-slate-400">
+          <router-link
+            v-for="item in topNavItems"
+            :key="item.path"
+            :to="item.path"
+            class="rounded-full px-4 py-2 text-[10px] transition sm:text-xs"
+            :class="$route.path === item.path
+              ? 'bg-emerald-500/15 text-emerald-100 border border-emerald-400/60'
+              : 'hover:text-white'"
+          >
+            {{ item.name }}
+          </router-link>
         </div>
       </div>
 
@@ -169,6 +186,13 @@ const menuItems = [
   { name: 'Acknowledgements', path: '/acknowledgements', icon: BookOpenIcon },
   { name: 'Audit Logs', path: '/audit-logs', icon: ClockIcon, requiresAuth: true },
   { name: 'Add User', path: '/add-user', icon: UserPlusIcon, requiresAdmin: true }
+]
+
+const topNavItems = [
+  { name: 'Dashboard', path: '/dashboard' },
+  { name: 'Publications', path: '/publications' },
+  { name: 'Faculty', path: '/faculty' },
+  { name: 'Acknowledgements', path: '/acknowledgements' }
 ]
 
 const filteredMenuItems = computed(() =>
