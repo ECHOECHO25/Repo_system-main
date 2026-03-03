@@ -56,4 +56,12 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) 
     $routes->post('acknowledgements', 'AcknowledgementsController::create');
     $routes->put('acknowledgements/(:num)', 'AcknowledgementsController::update/$1');
     $routes->delete('acknowledgements/(:num)', 'AcknowledgementsController::delete/$1');
+
+    // Faculty Masterlist
+    $routes->get('faculty-masterlist', 'FacultyMasterlistController::index');
+    $routes->post('faculty-masterlist', 'FacultyMasterlistController::create');
+    $routes->put('faculty-masterlist/(:num)', 'FacultyMasterlistController::update/$1');
+    $routes->delete('faculty-masterlist/(:num)', 'FacultyMasterlistController::delete/$1');
+    $routes->post('faculty-masterlist/bulk-import', 'FacultyMasterlistController::bulkImport');
+    $routes->get('faculty-masterlist/export', 'FacultyMasterlistController::export');
 });

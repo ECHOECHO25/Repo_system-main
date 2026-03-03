@@ -1,22 +1,22 @@
 <template>
-  <div class="space-y-6">
+  <section class="space-y-6">
     <div>
       <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Admin</p>
-      <h1 class="text-3xl font-semibold">Add User</h1>
+      <h1 class="text-3xl font-semibold text-slate-100">Add User</h1>
       <p class="mt-2 text-sm text-slate-400">
-        Create a new account with a role and status.
+        Create accounts, assign roles, and manage access status.
       </p>
     </div>
 
-    <div class="max-w-2xl rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-      <div class="flex items-center justify-between">
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Admin</p>
-          <h2 class="text-lg font-semibold">Create User</h2>
+          <p class="text-xs uppercase tracking-[0.3em] text-slate-500">User List</p>
+          <h2 class="text-lg font-semibold text-slate-100">Accounts</h2>
         </div>
         <button
           type="button"
-          class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 hover:border-emerald-400"
+          class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400"
           :disabled="!isAdmin"
           @click="openModal"
         >
@@ -24,74 +24,85 @@
         </button>
       </div>
 
-      <p v-if="!isAdmin" class="mt-4 text-sm text-rose-300">
-        Only admins can add users.
-      </p>
-      <p v-if="success" class="mt-4 text-sm text-emerald-300">{{ success }}</p>
-    </div>
-
-    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs uppercase tracking-[0.3em] text-slate-500">User List</p>
-          <h2 class="text-lg font-semibold">Accounts</h2>
-        </div>
-        <button
-          v-if="isAdmin"
-          type="button"
-          class="rounded-full border border-slate-800 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 hover:border-emerald-400"
-          @click="fetchUsers"
-        >
-          Refresh
-        </button>
-      </div>
-
-      <p v-if="!isAdmin" class="mt-4 text-sm text-rose-300">Only admins can view users.</p>
+      <p v-if="!isAdmin" class="mt-4 text-sm text-rose-300">Only admins can view or add users.</p>
       <p v-else-if="usersLoading" class="mt-4 text-sm text-slate-400">Loading users...</p>
       <p v-else-if="usersError" class="mt-4 text-sm text-rose-300">{{ usersError }}</p>
       <p v-else-if="users.length === 0" class="mt-4 text-sm text-slate-400">No users found.</p>
+      <p v-if="success" class="mt-4 text-sm text-emerald-300">{{ success }}</p>
 
-      <div v-else class="mt-4 overflow-x-auto">
-        <table class="min-w-full text-left text-sm">
-          <thead class="text-xs uppercase tracking-[0.2em] text-slate-400">
-            <tr class="border-b border-slate-800">
-              <th class="px-3 py-2">Username</th>
-              <th class="px-3 py-2">Role</th>
-              <th class="px-3 py-2">Status</th>
-              <th class="px-3 py-2">Created</th>
-              <th class="px-3 py-2">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 text-slate-200">
-            <tr v-for="user in users" :key="user.id">
-              <td class="px-3 py-2">{{ user.username }}</td>
-              <td class="px-3 py-2 capitalize">{{ user.role }}</td>
-              <td class="px-3 py-2">
-                <select
-                  v-model="user.status"
-                  class="rounded-lg border border-slate-800 bg-slate-950/60 px-2 py-1 text-xs text-slate-100 focus:border-emerald-400 focus:outline-none"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </td>
-              <td class="px-3 py-2">{{ formatDate(user.created_at) }}</td>
-              <td class="px-3 py-2">
-                <button
-                  type="button"
-                  class="rounded-full border border-emerald-500/60 bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-emerald-200 hover:border-emerald-400"
-                  :disabled="userSavingId === user.id"
-                  @click="updateStatus(user)"
-                >
-                  {{ userSavingId === user.id ? 'Saving...' : 'Save' }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/40">
+        <div class="overflow-x-auto">
+          <table class="w-full table-auto text-sm">
+            <thead class="bg-slate-950/90 text-left text-xs uppercase tracking-[0.24em] text-slate-400">
+              <tr>
+                <th class="px-4 py-3 w-56">Username</th>
+                <th class="px-4 py-3 w-24">Role</th>
+                <th class="px-4 py-3 w-32">Status</th>
+                <th class="px-4 py-3 w-40">Created</th>
+                <th class="px-4 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr v-for="user in pagedUsers" :key="user.id" class="hover:bg-slate-900/60">
+                <td class="px-4 py-4 align-top text-slate-200 whitespace-nowrap">{{ user.username }}</td>
+                <td class="px-4 py-4 align-top text-slate-300 capitalize whitespace-nowrap">{{ user.role }}</td>
+                <td class="px-4 py-4 align-top text-slate-200">
+                  <select
+                    v-model="user.status"
+                    class="rounded-lg border border-slate-800 bg-slate-950/60 px-2 py-1 text-xs text-slate-100 focus:border-emerald-400 focus:outline-none"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </td>
+                <td class="px-4 py-4 align-top text-slate-300 whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
+                <td class="px-4 py-4 align-top text-right">
+                  <button
+                    type="button"
+                    class="rounded-full border border-emerald-500/60 bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-emerald-200 hover:border-emerald-400"
+                    :disabled="userSavingId === user.id"
+                    @click="updateStatus(user)"
+                  >
+                    {{ userSavingId === user.id ? 'Saving...' : 'Save' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <nav v-if="totalUserPages > 1" class="border-t border-slate-800 bg-slate-950/30 px-4 py-3">
+          <div class="flex items-center justify-center gap-2">
+            <button
+              class="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
+              :disabled="userPage === 1"
+              @click="changeUserPage(userPage - 1)"
+            >
+              Previous
+            </button>
+            <button
+              v-for="page in userPageNumbers"
+              :key="page"
+              class="rounded-lg border px-3 py-1 text-xs"
+              :class="page === userPage
+                ? 'border-emerald-400 bg-emerald-400/10 text-emerald-100'
+                : 'border-slate-700 text-slate-200 hover:border-slate-500'"
+              @click="changeUserPage(page)"
+            >
+              {{ page }}
+            </button>
+            <button
+              class="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-200 disabled:opacity-40"
+              :disabled="userPage === totalUserPages"
+              @click="changeUserPage(userPage + 1)"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
       </div>
     </div>
-  </div>
+  </section>
 
   <transition name="fade">
     <div
@@ -204,6 +215,8 @@ const users = ref([])
 const usersLoading = ref(false)
 const usersError = ref('')
 const userSavingId = ref(null)
+const userPage = ref(1)
+const usersPerPage = 10
 
 const resetForm = () => {
   form.value = {
@@ -242,6 +255,7 @@ const fetchUsers = async () => {
   try {
     const response = await axios.get(`${apiBase}/users`)
     users.value = response.data?.data || []
+    userPage.value = 1
   } catch (err) {
     usersError.value = err?.response?.data?.message || 'Failed to load users'
   } finally {
@@ -280,6 +294,24 @@ const closeModal = () => {
 }
 
 onMounted(fetchUsers)
+
+const totalUserPages = computed(() => Math.max(1, Math.ceil(users.value.length / usersPerPage)))
+const pagedUsers = computed(() => {
+  const start = (userPage.value - 1) * usersPerPage
+  return users.value.slice(start, start + usersPerPage)
+})
+const userPageNumbers = computed(() => {
+  const pages = []
+  const total = totalUserPages.value
+  let start = Math.max(1, userPage.value - 2)
+  let end = Math.min(total, userPage.value + 2)
+  for (let i = start; i <= end; i += 1) pages.push(i)
+  return pages
+})
+const changeUserPage = (page) => {
+  if (page < 1 || page > totalUserPages.value) return
+  userPage.value = page
+}
 </script>
 
 <style scoped>

@@ -23,23 +23,23 @@
       </div>
       <div v-else>
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/40">
-          <table class="w-full table-fixed text-sm">
+          <table class="w-full table-auto text-sm">
             <thead class="bg-slate-950/90 text-left text-xs uppercase tracking-[0.24em] text-slate-400">
               <tr>
-                <th class="px-4 py-3 w-32">Date</th>
-                <th class="px-4 py-3 w-24">User</th>
+                <th class="px-4 py-3 w-44">Date</th>
+                <th class="px-4 py-3 w-32">User</th>
                 <th class="px-4 py-3 w-24">Role</th>
-                <th class="px-4 py-3 w-40">Action</th>
+                <th class="px-4 py-3 w-28">Action</th>
                 <th class="px-4 py-3">Description</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800">
               <tr v-for="log in logs" :key="log.id" class="hover:bg-slate-900/60">
-                <td class="px-4 py-4 align-top text-slate-300">{{ formatDate(log.created_at) }}</td>
-                <td class="px-4 py-4 align-top text-slate-200">{{ log.username || '—' }}</td>
-                <td class="px-4 py-4 align-top text-slate-400">{{ log.role || '—' }}</td>
-                <td class="px-4 py-4 align-top text-slate-200">{{ log.action }}</td>
-                <td class="px-4 py-4 align-top text-slate-300">
+                <td class="px-4 py-4 align-top text-slate-300 whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
+                <td class="px-4 py-4 align-top text-slate-200 whitespace-nowrap">{{ log.username || '—' }}</td>
+                <td class="px-4 py-4 align-top text-slate-400 whitespace-nowrap">{{ log.role || '—' }}</td>
+                <td class="px-4 py-4 align-top text-slate-200 whitespace-nowrap">{{ log.action }}</td>
+                <td class="px-4 py-4 align-top text-slate-300 whitespace-normal break-words">
                   {{ log.description || `${log.entity_type || 'system'} ${log.entity_id || ''}` }}
                 </td>
               </tr>

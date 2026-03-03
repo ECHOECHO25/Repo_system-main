@@ -48,7 +48,7 @@
               <th class="px-4 py-3 font-semibold">Volume</th>
               <th class="px-4 py-3 font-semibold">No. of Copies</th>
               <th class="px-4 py-3 font-semibold">Remarks</th>
-              <th class="px-4 py-3 font-semibold">Action</th>
+              <th v-if="isAuthenticated" class="px-4 py-3 font-semibold">Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800 text-slate-200">
@@ -61,7 +61,7 @@
               <td class="px-4 py-3">{{ row.itemsLabel || '-' }}</td>
               <td class="px-4 py-3">{{ row.copiesLabel || '-' }}</td>
               <td class="px-4 py-3">{{ row.remarksLabel || '-' }}</td>
-              <td class="px-4 py-3">
+              <td v-if="isAuthenticated" class="px-4 py-3">
                 <button
                   v-if="isAuthenticated"
                   type="button"
@@ -676,17 +676,28 @@ const printRecord = (row) => {
           @page { size: A4; margin: 12mm; }
           body { font-family: Arial, sans-serif; margin: 0; color: #111; }
           .sheet { border: 1px solid #777; padding: 14px; min-height: 270mm; box-sizing: border-box; }
-          .top { display: grid; grid-template-columns: 1fr 270px; gap: 8px; }
+          .top { display: grid; grid-template-columns: 1fr 320px; gap: 8px; }
           .brand { padding: 4px 0 10px; }
           .brand-inner { display: flex; align-items: center; gap: 14px; }
           .brand-logo { width: 64px; height: 64px; object-fit: contain; }
-          .brand-title { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
-          .brand-sub { font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
+          .brand-title { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+          .brand-sub { font-size: 16px; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
           .meta table, .main table, .items, .signatures table { width: 100%; border-collapse: collapse; }
+          .meta table { width: 320px; }
           .meta td, .meta th, .main td, .main th, .items td, .items th, .signatures td {
-            border: 1px solid #c9c9c9; padding: 6px 8px; font-size: 13px; vertical-align: top;
+            border: 1px solid #c9c9c9; padding: 6px 8px; font-size: 12px; vertical-align: top;
           }
-          .meta th, .main th, .items th { background: #f8f8f8; text-transform: uppercase; letter-spacing: .6px; font-size: 12px; }
+          .meta th {
+            background: #f8f8f8;
+            text-transform: none;
+            letter-spacing: .2px;
+            font-size: 10px;
+            text-align: left;
+            font-weight: 600;
+          }
+          .meta td { text-align: left; }
+          .main th { background: #f8f8f8; text-transform: uppercase; letter-spacing: .6px; font-size: 10px; }
+          .items th { background: #f8f8f8; text-transform: uppercase; letter-spacing: .6px; font-size: 12px; }
           .main { margin-top: 10px; }
           .items { margin-top: 12px; table-layout: fixed; }
           .items th:nth-child(1), .items td:nth-child(1) { width: 48%; }
@@ -696,7 +707,7 @@ const printRecord = (row) => {
           .signatures { margin-top: 34px; }
           .line { border-bottom: 1px solid #111; margin-top: 24px; }
           .sig-title { margin-top: 8px; font-size: 12px; font-style: italic; }
-          .note { margin-top: 42px; font-size: 13px; text-align: center; line-height: 1.5; }
+          .note { margin-top: 42px; font-size: 12px; text-align: center; line-height: 1.5; }
           .note a { color: #0b62c4; text-decoration: underline; }
           .foot { margin-top: 46px; font-size: 13px; line-height: 1.5; }
         </style>
@@ -1193,4 +1204,3 @@ onUnmounted(() => {
   transform: translateY(8px);
 }
 </style>
-

@@ -35,7 +35,35 @@ class Auth implements FilterInterface
         }
 
         $session = session();
-        if (!$session->get('user_id')) {
+        $userId = $session->get('user_id');
+        if ($userId) {
+            $now = time();
+            $role = (string)($session->get('role') ?? '');
+            $idleLimit = $role === 'admin' ? 600 : 1800; // 10 min admin, 30 min others
+            $absoluteLimit = 28800; // 8 hours
+
+            $loginTime = (int)($session->get('login_time') ?? 0);
+            if ($loginTime && ($now - $loginTime) > $absoluteLimit) {
+                $session->destroy();
+                return service('response')->setStatusCode(401)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Session expired. Please log in again.'
+                ]);
+            }
+
+            $lastActivity = (int)($session->get('last_activity') ?? 0);
+            if ($lastActivity && ($now - $lastActivity) > $idleLimit) {
+                $session->destroy();
+                return service('response')->setStatusCode(401)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Session timed out due to inactivity.'
+                ]);
+            }
+
+            $session->set('last_activity', $now);
+        }
+
+        if (!$userId) {
             return service('response')->setStatusCode(401)->setJSON([
                 'status' => 'error',
                 'message' => 'Unauthorized'

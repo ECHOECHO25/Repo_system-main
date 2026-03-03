@@ -22,7 +22,12 @@ class AuditLogsController extends ResourceController
         'faculty.import',
         'faculty.export',
         'publication.import',
-        'publication.export'
+        'publication.export',
+        'masterlist.create',
+        'masterlist.update',
+        'masterlist.delete',
+        'masterlist.import',
+        'masterlist.export'
     ];
 
     public function __construct()
@@ -98,6 +103,8 @@ class AuditLogsController extends ResourceController
                 $entityType = 'faculty';
             } elseif (str_starts_with($action, 'publication.')) {
                 $entityType = 'publication';
+            } elseif (str_starts_with($action, 'masterlist.')) {
+                $entityType = 'faculty_masterlist';
             } elseif ($action === 'login' || $action === 'logout') {
                 $entityType = 'user';
             }

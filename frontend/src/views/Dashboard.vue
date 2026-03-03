@@ -6,7 +6,7 @@
       <div class="mb-4 sm:mb-6">
         <div class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 backdrop-blur-sm">
           <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
-          <span class="text-[10px] font-medium uppercase tracking-wider text-emerald-300 sm:text-xs">
+          <span class="text-[11px] font-medium uppercase tracking-wider text-emerald-300 sm:text-xs">
             Live System
           </span>
         </div>
@@ -21,7 +21,7 @@
           Comprehensive research tracking system for Benguet State University. Monitor publications, 
           citations, and research impact across all colleges, institutes, and research centers in real-time.
         </p>
-        <p class="max-w-3xl text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+        <p class="max-w-3xl text-xs leading-relaxed text-slate-400 sm:text-sm">
           This dashboard consolidates data from REPO submissions, provides ISO-compliant reporting, 
           supports accreditation requirements, and enables data-driven decision making for research 
           management and performance evaluation.
@@ -29,10 +29,11 @@
       </div>
 
       <!-- Quick Stats Cards -->
-      <div class="mb-10 sm:mb-12">
+      <div class="mb-6 sm:mb-8">
         <div class="mb-4 sm:mb-6">
           <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Key Performance Indicators</h2>
-          <p class="text-[11px] text-slate-400 sm:text-sm">
+          <div class="h-2"></div>
+          <p class="text-xs text-slate-400 sm:text-sm">
             Real-time overview of critical research metrics across all academic units.
           </p>
         </div>
@@ -41,13 +42,13 @@
                class="group relative overflow-hidden rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm transition-all hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10">
             <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br from-emerald-500/10 to-transparent blur-2xl"></div>
             <div class="relative">
-              <p class="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
+              <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
                 {{ kpi.label }}
               </p>
               <p class="mb-3 text-2xl font-bold text-white sm:text-4xl">
                 {{ kpi.value || 0 }}
               </p>
-              <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+              <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                 {{ getKpiDescription(kpi.label) }}
               </p>
             </div>
@@ -60,35 +61,36 @@
         <div class="text-center">
           <div class="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-emerald-500/20 border-t-emerald-500"></div>
           <p class="mb-2 text-sm font-medium text-slate-300">Loading Dashboard Data</p>
-          <p class="text-xs text-slate-500">Fetching latest metrics from database...</p>
+          <p class="text-[11px] text-slate-500">Fetching latest metrics from database...</p>
         </div>
       </div>
 
       <!-- Main Content -->
-      <div v-else class="space-y-10 sm:space-y-12">
+      <div v-else class="dashboard-stack">
         <!-- Charts Section -->
-        <div>
+        <div class="dashboard-section">
           <div class="mb-4 sm:mb-6">
             <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Research Analytics</h2>
-            <p class="text-[11px] text-slate-400 sm:text-sm">
+            <div class="h-2"></div>
+            <p class="text-xs text-slate-400 sm:text-sm">
               Visual representation of publication trends and distribution patterns to identify growth areas and institutional strengths.
             </p>
           </div>
-          <div class="grid gap-6 lg:grid-cols-2">
+          <div class="grid grid-cols-1 gap-8 xl:gap-10 md:grid-cols-2">
             <!-- Yearly Trends Chart -->
             <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
               <div class="mb-4 sm:mb-6">
                 <h3 class="mb-2 text-base font-bold text-white sm:text-xl">Publication Trends Over Time</h3>
-                <p class="mb-3 text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+                <p class="mb-3 text-xs leading-relaxed text-slate-400 sm:text-sm">
                   Year-over-year publication growth analysis showing research output trajectory. 
                   This trend helps identify peak production years and forecast future targets.
                 </p>
               </div>
-              <div class="relative h-56 sm:h-64 lg:h-72">
+              <div class="relative h-[260px] sm:h-[340px] lg:h-[380px]">
                 <canvas ref="yearlyTrendsChart"></canvas>
               </div>
               <div class="mt-4 border-t border-slate-700/50 pt-4">
-                <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+                <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                   Upward trends indicate increasing research activity. Use this data to validate 
                   annual reports and set realistic growth targets.
                 </p>
@@ -99,16 +101,16 @@
             <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
               <div class="mb-4 sm:mb-6">
                 <h3 class="mb-2 text-base font-bold text-white sm:text-xl">Publication Type Distribution</h3>
-                <p class="mb-3 text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+                <p class="mb-3 text-xs leading-relaxed text-slate-400 sm:text-sm">
                   Breakdown of publications by format including journals, conference papers, books, 
                   and other scholarly outputs to ensure balanced research portfolio.
                 </p>
               </div>
-              <div class="relative h-56 sm:h-64 lg:h-72">
+              <div class="relative h-[260px] sm:h-[340px] lg:h-[380px]">
                 <canvas ref="typeChart"></canvas>
               </div>
               <div class="mt-4 border-t border-slate-700/50 pt-4">
-                <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+                <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                   A healthy research portfolio typically includes 60-70% journal articles, 20-25% 
                   conference proceedings, and 10-15% books or chapters.
                 </p>
@@ -117,10 +119,11 @@
           </div>
         </div>
         <!-- Faculty Metrics Section -->
-        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
+        <div class="dashboard-section rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
           <div class="mb-4 sm:mb-6">
             <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Faculty Research Profile</h2>
-            <p class="mb-3 text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+            <div class="h-2"></div>
+            <p class="mb-3 text-xs leading-relaxed text-slate-400 sm:text-sm">
               Comprehensive overview of faculty research metrics including Google Scholar profiles, 
               citation counts, H-index, and i-10 index. These indicators help identify research leaders 
               and opportunities for faculty development.
@@ -130,7 +133,7 @@
             <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-4 sm:p-5">
               <div class="mb-3 flex items-center justify-between">
                 <div>
-                  <p class="text-[11px] font-medium text-slate-400 sm:text-sm">Total Active Faculty</p>
+                  <p class="text-xs font-medium text-slate-400 sm:text-sm">Total Active Faculty</p>
                   <p class="mt-2 text-xl font-bold text-white sm:text-3xl">{{ facultyMetrics.metrics.total_faculty || 0 }}</p>
                 </div>
                 <div class="rounded-lg bg-blue-500/10 p-3">
@@ -139,7 +142,7 @@
                   </svg>
                 </div>
               </div>
-              <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+              <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                 Faculty members registered with active research profiles
               </p>
             </div>
@@ -147,7 +150,7 @@
             <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-4 sm:p-5">
               <div class="mb-3 flex items-center justify-between">
                 <div>
-                  <p class="text-[11px] font-medium text-slate-400 sm:text-sm">With Google Scholar Profile</p>
+                  <p class="text-xs font-medium text-slate-400 sm:text-sm">With Google Scholar Profile</p>
                   <p class="mt-2 text-xl font-bold text-white sm:text-3xl">{{ facultyMetrics.metrics.with_profile || 0 }}</p>
                 </div>
                 <div class="rounded-lg bg-green-500/10 p-3">
@@ -156,7 +159,7 @@
                   </svg>
                 </div>
               </div>
-              <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+              <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                 Linked accounts for automatic citation tracking
               </p>
             </div>
@@ -164,7 +167,7 @@
             <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-4 sm:p-5">
               <div class="mb-3 flex items-center justify-between">
                 <div>
-                  <p class="text-[11px] font-medium text-slate-400 sm:text-sm">Missing H-Index Data</p>
+                  <p class="text-xs font-medium text-slate-400 sm:text-sm">Missing H-Index Data</p>
                   <p class="mt-2 text-xl font-bold text-white sm:text-3xl">{{ facultyMetrics.metrics.missing_h_index || 0 }}</p>
                 </div>
                 <div class="rounded-lg bg-yellow-500/10 p-3">
@@ -173,7 +176,7 @@
                   </svg>
                 </div>
               </div>
-              <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+              <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                 Profiles without H-index measuring research productivity
               </p>
             </div>
@@ -181,7 +184,7 @@
             <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-4 sm:p-5">
               <div class="mb-3 flex items-center justify-between">
                 <div>
-                  <p class="text-[11px] font-medium text-slate-400 sm:text-sm">Missing Citation Counts</p>
+                  <p class="text-xs font-medium text-slate-400 sm:text-sm">Missing Citation Counts</p>
                   <p class="mt-2 text-xl font-bold text-white sm:text-3xl">{{ facultyMetrics.metrics.missing_citations || 0 }}</p>
                 </div>
                 <div class="rounded-lg bg-orange-500/10 p-3">
@@ -190,7 +193,7 @@
                   </svg>
                 </div>
               </div>
-              <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+              <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                 Profiles without citation data indicating research influence
               </p>
             </div>
@@ -198,7 +201,7 @@
             <div class="rounded-xl border border-slate-700/30 bg-slate-900/50 p-4 sm:p-5">
               <div class="mb-3 flex items-center justify-between">
                 <div>
-                  <p class="text-[11px] font-medium text-slate-400 sm:text-sm">Missing i-10 Index</p>
+                  <p class="text-xs font-medium text-slate-400 sm:text-sm">Missing i-10 Index</p>
                   <p class="mt-2 text-xl font-bold text-white sm:text-3xl">{{ facultyMetrics.metrics.missing_i10_index || 0 }}</p>
                 </div>
                 <div class="rounded-lg bg-red-500/10 p-3">
@@ -207,28 +210,29 @@
                   </svg>
                 </div>
               </div>
-              <p class="text-[10px] leading-relaxed text-slate-500 sm:text-xs">
+              <p class="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                 Profiles missing i-10 index showing sustained impact
               </p>
             </div>
           </div>
         </div>
         <!-- College Trends -->
-        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
+        <div class="dashboard-section rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
           <div class="mb-4 flex flex-wrap items-start justify-between gap-4 sm:mb-6">
             <div class="flex-1">
               <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">College-Specific Trends</h2>
-              <p class="text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+              <div class="h-2"></div>
+              <p class="text-xs leading-relaxed text-slate-400 sm:text-sm">
                 Compare publication trends across different colleges and institutes. Track performance 
                 over time to identify high-performing units and areas needing support.
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
-              <label class="text-[11px] font-medium text-slate-400 sm:text-sm">Select College:</label>
+              <label class="text-xs font-medium text-slate-400 sm:text-sm">Select College:</label>
               <select
                 v-model="selectedCollege"
                 @change="renderCollegeTrend"
-                class="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-[11px] text-white shadow-sm transition-colors hover:border-emerald-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 sm:px-4 sm:text-sm"
+                class="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-white shadow-sm transition-colors hover:border-emerald-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 sm:px-4 sm:text-sm"
               >
                 <option value="">All Colleges</option>
                 <option v-for="college in collegeOptions" :key="college" :value="college">
@@ -242,10 +246,11 @@
           </div>
         </div>
         <!-- Publications by College Chart -->
-        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
+        <div class="dashboard-section rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
           <div class="mb-4 sm:mb-6">
             <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Publications by College</h2>
-            <p class="text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+            <div class="h-2"></div>
+            <p class="text-xs leading-relaxed text-slate-400 sm:text-sm">
               Top contributing colleges and institutes ranked by total publication output.
             </p>
           </div>
@@ -254,9 +259,10 @@
           </div>
         </div>
         <!-- Detailed Publications Table -->
-        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
+        <div class="dashboard-section rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
           <div class="mb-4 sm:mb-6">
             <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Detailed College Rankings</h2>
+            <div class="h-2"></div>
             <p class="text-[11px] leading-relaxed text-slate-400 sm:text-sm">
               Complete breakdown of publication counts by college with percentage contribution 
               to total institutional output.
@@ -266,16 +272,16 @@
             <table class="w-full">
               <thead>
                 <tr class="border-b border-slate-700">
-                  <th class="pb-3 text-left text-[11px] font-semibold text-slate-300 sm:text-sm">Rank</th>
-                  <th class="pb-3 text-left text-[11px] font-semibold text-slate-300 sm:text-sm">College/Institute</th>
-                  <th class="pb-3 text-right text-[11px] font-semibold text-slate-300 sm:text-sm">Publications</th>
-                  <th class="pb-3 text-right text-[11px] font-semibold text-slate-300 sm:text-sm">Percentage</th>
+                  <th class="pb-3 text-left text-xs font-semibold text-slate-300 sm:text-sm">Rank</th>
+                  <th class="pb-3 text-left text-xs font-semibold text-slate-300 sm:text-sm">College/Institute</th>
+                  <th class="pb-3 text-right text-xs font-semibold text-slate-300 sm:text-sm">Publications</th>
+                  <th class="pb-3 text-right text-xs font-semibold text-slate-300 sm:text-sm">Percentage</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-700/50">
                 <tr v-for="(college, index) in publicationsByCollegeTop" :key="college.college_institute" 
                     class="transition-colors hover:bg-slate-800/30">
-                  <td class="py-3 text-[11px] text-slate-400 sm:py-4 sm:text-sm">
+                  <td class="py-3 text-xs text-slate-400 sm:py-4 sm:text-sm">
                     <div class="flex items-center gap-2">
                       <span class="font-bold">{{ index + 1 }}</span>
                       <span v-if="index === 0" class="text-yellow-400">🥇</span>
@@ -283,34 +289,35 @@
                       <span v-else-if="index === 2" class="text-orange-400">🥉</span>
                     </div>
                   </td>
-                  <td class="py-3 text-[11px] font-medium text-white sm:py-4 sm:text-sm">
+                  <td class="py-3 text-xs font-medium text-white sm:py-4 sm:text-sm">
                     {{ college.college_institute }}
                   </td>
-                  <td class="py-3 text-right text-[11px] font-bold text-emerald-400 sm:py-4 sm:text-sm">
+                  <td class="py-3 text-right text-xs font-bold text-emerald-400 sm:py-4 sm:text-sm">
                     {{ college.count }}
                   </td>
-                  <td class="py-3 text-right text-[11px] text-slate-400 sm:py-4 sm:text-sm">
+                  <td class="py-3 text-right text-xs text-slate-400 sm:py-4 sm:text-sm">
                     {{ calculatePercentage(college.count) }}%
                   </td>
                 </tr>
               </tbody>
               <tfoot class="border-t-2 border-slate-700">
                 <tr>
-                  <td colspan="2" class="py-3 text-[11px] font-bold text-white sm:py-4 sm:text-sm">TOTAL</td>
-                  <td class="py-3 text-right text-[11px] font-bold text-emerald-400 sm:py-4 sm:text-sm">
+                  <td colspan="2" class="py-3 text-xs font-bold text-white sm:py-4 sm:text-sm">TOTAL</td>
+                  <td class="py-3 text-right text-xs font-bold text-emerald-400 sm:py-4 sm:text-sm">
                     {{ totalPublications }}
                   </td>
-                  <td class="py-3 text-right text-[11px] font-bold text-slate-300 sm:py-4 sm:text-sm">100%</td>
+                  <td class="py-3 text-right text-xs font-bold text-slate-300 sm:py-4 sm:text-sm">100%</td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
         <!-- Quick Action Cards -->
-        <div>
+        <div class="dashboard-section">
           <div class="mb-4 sm:mb-6">
             <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">System Features</h2>
-            <p class="text-[11px] text-slate-400 sm:text-sm">
+            <div class="h-2"></div>
+            <p class="text-xs text-slate-400 sm:text-sm">
               Quick access to key features for managing publications, faculty profiles, and generating reports.
             </p>
           </div>
@@ -322,7 +329,7 @@
                 </svg>
               </div>
               <h3 class="mb-2 text-sm font-semibold text-white sm:text-lg">Publications Database</h3>
-              <p class="text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+              <p class="text-xs leading-relaxed text-slate-400 sm:text-sm">
                 Browse, search, and filter all research publications with advanced filtering by year, 
                 college, type, and keywords.
               </p>
@@ -335,7 +342,7 @@
                 </svg>
               </div>
               <h3 class="mb-2 text-sm font-semibold text-white sm:text-lg">Faculty Profiles</h3>
-              <p class="text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+              <p class="text-xs leading-relaxed text-slate-400 sm:text-sm">
                 Manage researcher profiles including Google Scholar integration, H-index tracking, 
                 citation counts, and publication history.
               </p>
@@ -348,7 +355,7 @@
                 </svg>
               </div>
               <h3 class="mb-2 text-sm font-semibold text-white sm:text-lg">Reports & Analytics</h3>
-              <p class="text-[11px] leading-relaxed text-slate-400 sm:text-sm">
+              <p class="text-xs leading-relaxed text-slate-400 sm:text-sm">
                 Generate comprehensive reports in PDF, Excel, or CSV formats for administrative use, 
                 accreditation requirements, and strategic planning.
               </p>
@@ -356,19 +363,19 @@
           </div>
         </div>
         <!-- System Information Footer -->
-        <div class="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
+        <div class="dashboard-section rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
           <div class="flex flex-wrap items-center justify-between gap-4 text-center sm:text-left">
             <div>
-              <p class="mb-1 text-[11px] font-medium text-slate-300 sm:text-sm">System Status</p>
-              <p class="text-[10px] text-slate-500 sm:text-xs">All systems operational</p>
+              <p class="mb-1 text-xs font-medium text-slate-300 sm:text-sm">System Status</p>
+              <p class="text-[11px] text-slate-500 sm:text-xs">All systems operational</p>
             </div>
             <div>
-              <p class="mb-1 text-[11px] font-medium text-slate-300 sm:text-sm">Last Updated</p>
-              <p class="text-[10px] text-slate-500 sm:text-xs">{{ dashboardData.last_updated || 'Never' }}</p>
+              <p class="mb-1 text-xs font-medium text-slate-300 sm:text-sm">Last Updated</p>
+              <p class="text-[11px] text-slate-500 sm:text-xs">{{ dashboardData.last_updated || 'Never' }}</p>
             </div>
             <div>
-              <p class="mb-1 text-[11px] font-medium text-slate-300 sm:text-sm">Total Records</p>
-              <p class="text-[10px] text-slate-500 sm:text-xs">{{ totalPublications }} publications</p>
+              <p class="mb-1 text-xs font-medium text-slate-300 sm:text-sm">Total Records</p>
+              <p class="text-[11px] text-slate-500 sm:text-xs">{{ totalPublications }} publications</p>
             </div>
           </div>
         </div>
@@ -510,6 +517,8 @@ export default {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          layout: { padding: 10 },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -523,11 +532,11 @@ export default {
           },
           scales: {
             x: {
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              grid: { color: 'rgba(148, 163, 184, 0.12)' },
               ticks: { color: '#94a3b8' }
             },
             y: {
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              grid: { color: 'rgba(148, 163, 184, 0.12)' },
               ticks: { color: '#94a3b8' }
             }
           }
@@ -562,10 +571,12 @@ export default {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          layout: { padding: 10 },
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: '#cbd5e1', padding: 15 }
+              labels: { color: '#cbd5e1', padding: 12, font: { size: 11 } }
             },
             tooltip: {
               backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -605,6 +616,8 @@ export default {
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          layout: { padding: 10 },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -614,7 +627,7 @@ export default {
           },
           scales: {
             x: {
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              grid: { color: 'rgba(148, 163, 184, 0.12)' },
               ticks: { color: '#94a3b8' }
             },
             y: {
@@ -664,6 +677,8 @@ export default {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: { duration: 900, easing: 'easeOutQuart' },
+          layout: { padding: 10 },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -673,11 +688,11 @@ export default {
           },
           scales: {
             x: {
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              grid: { color: 'rgba(148, 163, 184, 0.12)' },
               ticks: { color: '#94a3b8' }
             },
             y: {
-              grid: { color: 'rgba(148, 163, 184, 0.1)' },
+              grid: { color: 'rgba(148, 163, 184, 0.12)' },
               ticks: { color: '#94a3b8' }
             }
           }
@@ -715,5 +730,15 @@ export default {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.5);
+}
+
+.dashboard-stack > .dashboard-section + .dashboard-section {
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .dashboard-stack > .dashboard-section + .dashboard-section {
+    margin-top: 2.25rem;
+  }
 }
 </style>

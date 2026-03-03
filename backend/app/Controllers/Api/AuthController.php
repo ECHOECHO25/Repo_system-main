@@ -67,7 +67,9 @@ class AuthController extends ResourceController
             $session->set([
                 'user_id' => $user['id'],
                 'username' => $user['username'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                'login_time' => $now,
+                'last_activity' => $now
             ]);
             $session->remove(['login_attempts', 'login_lock_until']);
 

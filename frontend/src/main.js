@@ -8,6 +8,7 @@ import axios from 'axios'
 import Dashboard from './views/Dashboard.vue'
 import Publications from './views/Publications.vue'
 import Faculty from './views/Faculty.vue'
+import FacultyMasterlist from './views/FacultyMasterlist.vue'
 import Login from './views/Login.vue'
 import AuditLogs from './views/AuditLogs.vue'
 import AddUser from './views/AddUser.vue'
@@ -19,6 +20,7 @@ const routes = [
   { path: '/dashboard', component: Dashboard },
   { path: '/publications', component: Publications },
   { path: '/faculty', component: Faculty },
+  { path: '/faculty-masterlist', component: FacultyMasterlist },
   { path: '/audit-logs', component: AuditLogs, meta: { requiresAuth: true } },
   { path: '/acknowledgements', component: Acknowledgements },
   { path: '/add-user', component: AddUser, meta: { requiresAuth: true } }
@@ -56,5 +58,5 @@ router.beforeEach(async (to) => {
 
 const app = createApp(App)
 app.use(router)
-app.mount('#app')
 app.use(createPinia())
+app.mount('#app')
