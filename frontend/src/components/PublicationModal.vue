@@ -1,12 +1,12 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
-    <div class="w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-900/90 text-slate-100 shadow-2xl">
+    <div class="flex w-full max-w-5xl max-h-[90vh] flex-col rounded-3xl border border-slate-800 bg-slate-900/90 text-slate-100 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
         <h2 class="text-lg font-semibold">{{ modalTitle }}</h2>
         <button class="text-slate-400 hover:text-white" @click="handleClose">✕</button>
       </div>
 
-      <div class="px-6 py-6">
+      <div class="flex-1 overflow-y-auto px-6 py-6">
         <form @submit.prevent="save">
           <div class="grid gap-4 md:grid-cols-6">
             <div class="md:col-span-2">

@@ -7,7 +7,7 @@
       class="mx-auto flex flex-wrap items-center justify-between gap-4 px-6 py-6"
     >
       <!-- Left -->
-      <div class="flex items-center gap-3">
+      <div class="flex min-w-0 items-center gap-3">
         <button
           class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/70 hover:border-emerald-400"
           @click="toggleSidebar"
@@ -19,27 +19,31 @@
           <img src="/src/assets/logo_repo.png" alt="REPO logo" class="h-full w-full object-contain" />
         </div>
 
-        <div>
+        <div class="min-w-0">
           <div class="text-xs uppercase tracking-[0.32em] text-slate-400">
             BSU REMIS
           </div>
-          <div class="text-lg font-semibold">
+          <div class="truncate text-lg font-semibold sm:whitespace-normal">
             Research Monitoring System
           </div>
         </div>
       </div>
 
       <!-- Center Tabs -->
-      <div class="order-3 w-full lg:order-none lg:w-auto">
-        <div class="flex flex-wrap items-center justify-start gap-2 rounded-full border border-slate-800 bg-slate-950/60 p-1 text-xs uppercase tracking-[0.28em] text-slate-400">
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center justify-center gap-2 text-[10px] uppercase tracking-[0.18em] text-slate-400 sm:text-xs sm:tracking-[0.28em]">
           <router-link
             v-for="item in topNavItems"
             :key="item.path"
             :to="item.path"
-            class="rounded-full px-4 py-2 text-[10px] transition sm:text-xs"
-            :class="$route.path === item.path
-              ? 'bg-emerald-500/15 text-emerald-100 border border-emerald-400/60'
-              : 'hover:text-white'"
+            class="whitespace-nowrap rounded-full px-3 py-2 transition sm:px-4"
+            :class="[
+              $route.path === item.path
+                ? 'bg-emerald-500/15 text-emerald-100 border border-emerald-400/60'
+                : 'hover:text-white',
+              item.path === '/acknowledgements' ? 'ack-tab' : '',
+              item.path === '/faculty' ? 'hidden md:inline-flex' : ''
+            ]"
           >
             {{ item.name }}
           </router-link>
@@ -47,7 +51,7 @@
       </div>
 
       <!-- Right -->
-      <div class="flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-slate-400">
+      <div class="ml-auto hidden shrink-0 items-center gap-4 text-xs uppercase tracking-[0.3em] text-slate-400 lg:flex">
         <span>{{ currentTime }}</span>
         <button
           v-if="!isAuthenticated"
@@ -140,6 +144,19 @@
         </router-link>
 
       </nav>
+
+      <div class="mt-6 border-t border-slate-800 pt-4 lg:hidden">
+        <div class="mb-3 text-[11px] uppercase tracking-[0.28em] text-slate-500">
+          {{ currentTime }}
+        </div>
+        <button
+          v-if="!isAuthenticated"
+          class="w-full rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white"
+          @click="$router.push('/login')"
+        >
+          Login
+        </button>
+      </div>
 
       <!-- Logout -->
       <div class="mt-8 border-t border-slate-800 pt-4" v-if="isAuthenticated">
@@ -250,5 +267,11 @@ onUnmounted(() => {
 .slide-enter-from,
 .slide-leave-to {
   transform: translateX(-100%);
+}
+
+@media (max-width: 900px) {
+  .ack-tab {
+    display: none !important;
+  }
 }
 </style>

@@ -29,10 +29,10 @@
       </div>
 
       <!-- Quick Stats Cards -->
-      <div class="mb-6 sm:mb-8">
+      <div class="mb-0">
         <div class="mb-4 sm:mb-6">
+          <div class="h-3"></div>
           <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Key Performance Indicators</h2>
-          <div class="h-2"></div>
           <p class="text-xs text-slate-400 sm:text-sm">
             Real-time overview of critical research metrics across all academic units.
           </p>
@@ -68,10 +68,10 @@
       <!-- Main Content -->
       <div v-else class="dashboard-stack">
         <!-- Charts Section -->
-        <div class="dashboard-section">
+        <div class="dashboard-section mt-3 sm:mt-4">
           <div class="mb-4 sm:mb-6">
+            <div class="h-3"></div>
             <h2 class="mb-2 text-lg font-bold text-white sm:text-2xl">Research Analytics</h2>
-            <div class="h-2"></div>
             <p class="text-xs text-slate-400 sm:text-sm">
               Visual representation of publication trends and distribution patterns to identify growth areas and institutional strengths.
             </p>
@@ -362,23 +362,29 @@
             </div>
           </div>
         </div>
-        <!-- System Information Footer -->
-        <div class="dashboard-section rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 sm:p-6 backdrop-blur-sm">
-          <div class="flex flex-wrap items-center justify-between gap-4 text-center sm:text-left">
-            <div>
-              <p class="mb-1 text-xs font-medium text-slate-300 sm:text-sm">System Status</p>
-              <p class="text-[11px] text-slate-500 sm:text-xs">All systems operational</p>
-            </div>
-            <div>
-              <p class="mb-1 text-xs font-medium text-slate-300 sm:text-sm">Last Updated</p>
-              <p class="text-[11px] text-slate-500 sm:text-xs">{{ dashboardData.last_updated || 'Never' }}</p>
-            </div>
-            <div>
-              <p class="mb-1 text-xs font-medium text-slate-300 sm:text-sm">Total Records</p>
-              <p class="text-[11px] text-slate-500 sm:text-xs">{{ totalPublications }} publications</p>
-            </div>
+       
+
+        <footer class="dashboard-section rounded-2xl border border-slate-700/40 bg-slate-900/40 px-4 py-4 text-center text-xs text-slate-400 sm:px-6 sm:py-5 sm:text-sm">
+          <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-200 sm:text-base">
+            <span>Phone: (074) 422-1877</span>
+            <span class="hidden sm:inline-block">|</span>
+            <a
+              href="https://www.facebook.com/bsu.repo"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-emerald-300 transition hover:text-emerald-200"
+            >
+              Facebook: BSU REPO
+            </a>
           </div>
-        </div>
+          <div class="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-slate-500 sm:text-xs">
+            <span>BSU REPO © 2026</span>
+            <span class="hidden sm:inline-block">|</span>
+            <span>Research Monitoring System</span>
+            <span class="hidden sm:inline-block">|</span>
+            <span>Data-powered reporting for institutional research</span>
+          </div>
+        </footer>
       </div>
     </div>
   </main>

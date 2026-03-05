@@ -105,7 +105,7 @@
   <transition name="modal">
     <div v-if="showModal && isAuthenticated" class="fixed inset-0 z-50 grid place-items-center p-4">
       <div class="w-full max-w-3xl rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl" @click.stop>
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-6 flex items-center justify-between">
           <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">Add Distributed Journal</h2>
           <button
             type="button"
