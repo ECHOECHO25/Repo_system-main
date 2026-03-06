@@ -1,7 +1,7 @@
 <template>
   <section class="min-h-screen px-6 pb-12">
     <div class="mx-auto w-full">
-      <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="space-y-4">
         <div>
           <p class="text-xs uppercase tracking-[0.28em] text-slate-400">Faculty</p>
           <h1 class="text-2xl font-semibold text-slate-100 sm:text-3xl">Masterlist of Researchers</h1>
@@ -9,7 +9,7 @@
             Centralized roster for campus research staff. Manage records per campus, department, and unit.
           </p>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center justify-start gap-2">
           <button
             class="rounded-full border border-emerald-500/60 bg-emerald-500/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-emerald-200 transition hover:border-emerald-400"
             @click="openModal()"
@@ -411,7 +411,7 @@ const fetchRows = async () => {
         per_page: perPage
       }
     })
-    rows.value = response.data?.data || []
+    rows.value = response.data?.data || [] 
     pagination.value = response.data?.pagination || pagination.value
     selectedIds.value = []
   } catch (err) {
