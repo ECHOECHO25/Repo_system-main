@@ -380,7 +380,7 @@
           <div class="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-slate-500 sm:text-xs">
             <span>BSU REPO © 2026</span>
             <span class="hidden sm:inline-block">|</span>
-            <span>Research Monitoring System</span>
+            <span>Research Extension Publication Office</span>
             <span class="hidden sm:inline-block">|</span>
             <span>Data-powered reporting for institutional research</span>
           </div>

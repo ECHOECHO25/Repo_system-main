@@ -62,10 +62,11 @@
               <td class="px-4 py-3">{{ row.copiesLabel || '-' }}</td>
               <td class="px-4 py-3">{{ row.remarksLabel || '-' }}</td>
               <td v-if="isAuthenticated" class="px-4 py-3">
+                <div class="flex items-center gap-3 whitespace-nowrap">
                 <button
                   v-if="isAuthenticated"
                   type="button"
-                  class="mr-2 rounded border border-emerald-500/70 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-200 hover:border-emerald-400"
+                  class="rounded border border-emerald-500/70 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-200 hover:border-emerald-400"
                   @click="printRecord(row)"
                 >
                   Print
@@ -81,11 +82,12 @@
                 <button
                   v-if="isAuthenticated"
                   type="button"
-                  class="ml-2 rounded border border-rose-500/70 bg-rose-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-200 hover:border-rose-400"
+                  class="rounded border border-rose-500/70 bg-rose-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-200 hover:border-rose-400"
                   @click="deleteRecord(row)"
                 >
                   Delete
                 </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -661,11 +663,10 @@ const printRecord = (row) => {
   const popup = window.open('', '_blank', 'width=900,height=700')
   if (!popup) return
   const itemRows = Array.isArray(row.itemRows) ? row.itemRows : []
-  const printableItemRows = itemRows.slice(0, 6)
-  while (printableItemRows.length < 6) {
+  const printableItemRows = itemRows.slice(0, 7)
+  while (printableItemRows.length < 7) {
     printableItemRows.push({ volume: '', copies: '', remark: '' })
   }
-
   const html = `
     <!doctype html>
     <html>
@@ -673,70 +674,156 @@ const printRecord = (row) => {
         <meta charset="utf-8" />
         <title>MJSIR Acknowledgement</title>
         <style>
-          @page { size: A4; margin: 12mm; }
-          body { font-family: Arial, sans-serif; margin: 0; color: #111; }
-          .sheet { border: 1px solid #777; padding: 14px; min-height: 270mm; box-sizing: border-box; }
-          .top { display: grid; grid-template-columns: 1fr 320px; gap: 8px; }
-          .brand { padding: 4px 0 10px; }
-          .brand-inner { display: flex; align-items: center; gap: 14px; }
-          .brand-logo { width: 64px; height: 64px; object-fit: contain; }
-          .brand-title { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
-          .brand-sub { font-size: 16px; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
+          @page { size: A4; margin: 10mm; }
+          body { font-family: Arial, sans-serif; margin: 0; color: #000; }
+          .sheet { padding: 8px 10px 0; box-sizing: border-box; }
+          .top {
+            display: grid;
+            grid-template-columns: 88px minmax(0, 1fr) 414px;
+            gap: 12px;
+            align-items: center;
+          }
+          .brand {
+            min-height: 86px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 0 0;
+          }
+          .brand-logo { width: 80px; height: 80px; object-fit: contain; }
+          .brand-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 86px;
+            text-align: center;
+          }
+          .brand-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.08;
+          }
+          .brand-title { font-size: 20px; font-weight: 700; letter-spacing: 0.2px; color: #7b7b7b; }
+          .brand-sub { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; margin-top: 6px; color: #7b7b7b; }
           .meta table, .main table, .items, .signatures table { width: 100%; border-collapse: collapse; }
-          .meta table { width: 320px; }
           .meta td, .meta th, .main td, .main th, .items td, .items th, .signatures td {
-            border: 1px solid #c9c9c9; padding: 6px 8px; font-size: 12px; vertical-align: top;
+            border: 1px solid #c7c7c7;
+            padding: 4px 7px;
+            font-size: 11px;
+            vertical-align: middle;
           }
-          .meta th {
-            background: #f8f8f8;
-            text-transform: none;
-            letter-spacing: .2px;
-            font-size: 10px;
+          .meta th, .main th, .items th {
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #fff;
+          }
+          .meta td {
+            font-size: 11px;
+            color: #7a7a7a;
+            padding: 4px 8px;
+            line-height: 1.1;
+          }
+          .meta .meta-label {
+            width: 112px;
             text-align: left;
-            font-weight: 600;
+            vertical-align: top;
+            padding-top: 7px;
           }
-          .meta td { text-align: left; }
-          .main th { background: #f8f8f8; text-transform: uppercase; letter-spacing: .6px; font-size: 10px; }
-          .items th { background: #f8f8f8; text-transform: uppercase; letter-spacing: .6px; font-size: 12px; }
-          .main { margin-top: 10px; }
-          .items { margin-top: 12px; table-layout: fixed; }
+          .meta .meta-value {
+            width: 124px;
+          }
+          .meta .meta-label-wide {
+            width: 150px;
+            text-align: left;
+          }
+          .meta .meta-empty {
+            width: 54px;
+          }
+          .main { margin-top: 6px; }
+          .main th { width: 20%; font-size: 10px; }
+          .items {
+            margin-top: 10px;
+            table-layout: fixed;
+          }
           .items th:nth-child(1), .items td:nth-child(1) { width: 48%; }
-          .items th:nth-child(2), .items td:nth-child(2) { width: 20%; text-align: center; }
-          .items th:nth-child(3), .items td:nth-child(3) { width: 32%; }
-          .blank-row td { height: 26px; }
-          .signatures { margin-top: 34px; }
-          .line { border-bottom: 1px solid #111; margin-top: 24px; }
-          .sig-title { margin-top: 8px; font-size: 12px; font-style: italic; }
-          .note { margin-top: 42px; font-size: 12px; text-align: center; line-height: 1.5; }
-          .note a { color: #0b62c4; text-decoration: underline; }
-          .foot { margin-top: 46px; font-size: 13px; line-height: 1.5; }
+          .items th:nth-child(2), .items td:nth-child(2) { width: 18%; text-align: center; }
+          .items th:nth-child(3), .items td:nth-child(3) { width: 34%; }
+          .items td { height: 24px; vertical-align: top; }
+          .signatures { margin-top: 56px; }
+          .signatures td { width: 50%; padding: 8px 6px 6px; vertical-align: top; }
+          .sig-label {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+          }
+          .sig-box {
+            width: 12px;
+            height: 12px;
+            background: #000;
+            display: inline-block;
+          }
+          .sig-name {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 11px;
+            min-height: 14px;
+          }
+          .line { border-bottom: 1px solid #000; margin-top: 2px; }
+          .sig-title { margin-top: 6px; font-size: 10px; font-style: italic; }
+          .note {
+            margin-top: 34px;
+            padding: 0 28px;
+            font-size: 10px;
+            font-style: italic;
+            line-height: 1.6;
+            text-align: center;
+          }
+          .note a { color: #1155cc; text-decoration: underline; }
+          .thank-you {
+            margin-top: 6px;
+            font-size: 10px;
+            font-style: italic;
+            text-align: center;
+          }
         </style>
       </head>
       <body>
         <div class="sheet">
           <div class="top">
             <div class="brand">
-              <div class="brand-inner">
-                <img class="brand-logo" src="${logoUrl}" alt="BSU logo" />
-                <div>
-                  <div class="brand-title">MJSIR</div>
-                  <div class="brand-sub">ACKNOWLEDGEMENT</div>
-                </div>
+              <img class="brand-logo" src="${logoUrl}" alt="BSU logo" />
+            </div>
+            <div class="brand-copy">
+              <div class="brand-text">
+                <div class="brand-title">MJSIR</div>
+                <div class="brand-sub">ACKNOWLEDGEMENT</div>
               </div>
             </div>
             <div class="meta">
               <table>
-                <tr><th>Code</th><th>Revision Number</th></tr>
-                <tr><td>OF-REPO-05</td><td>&nbsp;</td></tr>
-                <tr><th>Date of Effectivity</th><th>&nbsp;</th></tr>
-                <tr><td>July 17, 2018</td><td>&nbsp;</td></tr>
+                <tr>
+                  <td class="meta-label">Document Code:</td>
+                  <td class="meta-value">QF-REPO-05</td>
+                  <td class="meta-label-wide">Revision Number</td>
+                  <td class="meta-empty">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td class="meta-label">Effectivity:</td>
+                  <td class="meta-value">July 17, 2018</td>
+                  <td colspan="2">&nbsp;</td>
+                </tr>
               </table>
             </div>
           </div>
 
           <div class="main">
             <table>
-              <tr><th style="width: 18%;">Date</th><td style="width: 32%;">${escapeHtml(formatDate(row.date_issued))}</td><th style="width: 18%;">Time</th><td>${escapeHtml(formatTime(row.time_issued))}</td></tr>
+              <tr><th style="width: 20%;">Date</th><td style="width: 31%;">${escapeHtml(formatDate(row.date_issued) === '-' ? '' : formatDate(row.date_issued))}</td><th style="width: 18%;">Time</th><td>${escapeHtml(formatTime(row.time_issued) === '-' ? '' : formatTime(row.time_issued))}</td></tr>
               <tr><th>Name</th><td colspan="3">${escapeHtml(row.name || '')}</td></tr>
               <tr><th>Position</th><td colspan="3">${escapeHtml(row.position || '')}</td></tr>
               <tr><th>Affiliation/Agency</th><td colspan="3">${escapeHtml(row.affiliation || '')}</td></tr>
@@ -760,13 +847,15 @@ const printRecord = (row) => {
           <div class="signatures">
             <table>
               <tr>
-                <td style="width: 50%;">
-                  <div><strong>ISSUED BY:</strong> ${escapeHtml(row.issued_by || '')}</div>
+                <td>
+                  <div class="sig-label">ISSUED BY:<span class="sig-box"></span></div>
+                  <div class="sig-name">${escapeHtml(row.issued_by || '')}</div>
                   <div class="line"></div>
                   <div class="sig-title">Signature over printed name</div>
                 </td>
-                <td style="width: 50%;">
-                  <div><strong>RECEIVED BY:</strong> ${escapeHtml(row.received_by || '')}</div>
+                <td>
+                  <div class="sig-label">RECEIVED BY:<span class="sig-box"></span></div>
+                  <div class="sig-name">${escapeHtml(row.received_by || '')}</div>
                   <div class="line"></div>
                   <div class="sig-title">Signature over printed name</div>
                 </td>
@@ -775,16 +864,10 @@ const printRecord = (row) => {
           </div>
 
           <div class="note">
-            Kindly return this acknowledgement receipt after signing. Kindly send back to<br/>
-            <a href="mailto:repo@bsu.edu.ph">repo@bsu.edu.ph</a> or (074) 422-1877.<br/>
-            Thank you very much!
+            Kindly return this acknowledgement receipt after signing. Kindly send back to
+            <a href="mailto:repo@bsu.edu.ph">repo@bsu.edu.ph</a> or (074) 422-1877.
           </div>
-
-          <div class="foot">
-            Please accomplish this form in two copies:<br/>
-            1) REPO Copy<br/>
-            2) Receiving Copy
-          </div>
+          <div class="thank-you">Thank you very much!</div>
         </div>
       </body>
     </html>

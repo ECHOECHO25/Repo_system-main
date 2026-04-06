@@ -7,8 +7,9 @@
             <img src="/src/assets/logo_repo.png" alt="REPO logo" class="h-full w-full object-contain" />
           </div>
           <div>
-            <div class="text-xs uppercase tracking-[0.32em] text-slate-400">BSU REMIS</div>
-            <div class="text-lg font-semibold">Research Monitoring System</div>
+            <div class="text-xs uppercase tracking-[0.32em] text-slate-400">REPO</div>
+            <div class="text-lg font-semibold">Research Extension Publication Office</div>
+            <div class="text-[10px] uppercase tracking-[0.28em] text-slate-400">Research Monitoring System</div>
           </div>
         </div>
 

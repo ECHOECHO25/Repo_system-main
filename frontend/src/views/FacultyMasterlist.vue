@@ -35,7 +35,7 @@
             v-if="canManage"
             class="rounded-full border border-rose-500/70 bg-rose-500/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-rose-200 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="selectedIds.length === 0"
-            @click="deleteSelected"
+            @click="openDeleteSelectedModal"
           >
             Delete Selected
           </button>
@@ -325,6 +325,33 @@
         </div>
       </div>
     </transition>
+
+    <div v-if="showDeleteSelectedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+      <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/95 p-6 text-slate-100 shadow-2xl">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Delete records</h3>
+          <button class="text-slate-400 hover:text-white" @click="closeDeleteSelectedModal">x</button>
+        </div>
+        <p class="mt-4 text-sm text-slate-300">
+          Delete {{ selectedIds.length }} selected record(s)? This action cannot be undone.
+        </p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
+            @click="closeDeleteSelectedModal"
+          >
+            Cancel
+          </button>
+          <button
+            class="rounded-lg bg-red-400/20 px-4 py-2 text-sm font-semibold text-red-100 hover:bg-red-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="deletingSelected"
+            @click="deleteSelected"
+          >
+            {{ deletingSelected ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -360,6 +387,8 @@ const submitError = ref('')
 const submitting = ref(false)
 const editingRow = ref(null)
 const selectedIds = ref([])
+const showDeleteSelectedModal = ref(false)
+const deletingSelected = ref(false)
 
 const form = ref({
   campus: '',
@@ -488,15 +517,26 @@ const deleteRow = async (row) => {
   }
 }
 
+const openDeleteSelectedModal = () => {
+  if (!selectedIds.value.length) return
+  showDeleteSelectedModal.value = true
+}
+
+const closeDeleteSelectedModal = () => {
+  showDeleteSelectedModal.value = false
+}
+
 const deleteSelected = async () => {
   if (!selectedIds.value.length) return
-  const confirmed = window.confirm(`Delete ${selectedIds.value.length} selected record(s)? This action cannot be undone.`)
-  if (!confirmed) return
   try {
+    deletingSelected.value = true
     await Promise.all(selectedIds.value.map((id) => axios.delete(`${apiBase}/faculty-masterlist/${id}`)))
+    closeDeleteSelectedModal()
     await fetchRows()
   } catch (err) {
     alert(err?.response?.data?.message || 'Failed to delete selected records.')
+  } finally {
+    deletingSelected.value = false
   }
 }
 

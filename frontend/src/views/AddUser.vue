@@ -28,9 +28,9 @@
       <p v-else-if="usersLoading" class="mt-4 text-sm text-slate-400">Loading users...</p>
       <p v-else-if="usersError" class="mt-4 text-sm text-rose-300">{{ usersError }}</p>
       <p v-else-if="users.length === 0" class="mt-4 text-sm text-slate-400">No users found.</p>
-      <p v-if="success" class="mt-4 text-sm text-emerald-300">{{ success }}</p>
+      <p v-if="success && isAdmin && !usersLoading && !usersError && users.length > 0" class="mt-4 text-sm text-emerald-300">{{ success }}</p>
 
-      <div v-else class="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/40">
+      <div v-if="isAdmin && !usersLoading && !usersError && users.length > 0" class="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/40">
         <div class="overflow-x-auto">
           <table class="w-full table-auto text-sm">
             <thead class="bg-slate-950/90 text-left text-xs uppercase tracking-[0.24em] text-slate-400">
@@ -46,24 +46,26 @@
               <tr v-for="user in pagedUsers" :key="user.id" class="hover:bg-slate-900/60">
                 <td class="px-4 py-4 align-top text-slate-200 whitespace-nowrap">{{ user.username }}</td>
                 <td class="px-4 py-4 align-top text-slate-300 capitalize whitespace-nowrap">{{ user.role }}</td>
-                <td class="px-4 py-4 align-top text-slate-200">
-                  <select
-                    v-model="user.status"
-                    class="rounded-lg border border-slate-800 bg-slate-950/60 px-2 py-1 text-xs text-slate-100 focus:border-emerald-400 focus:outline-none"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </td>
+                <td class="px-4 py-4 align-top text-slate-200 capitalize whitespace-nowrap">{{ user.status }}</td>
                 <td class="px-4 py-4 align-top text-slate-300 whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
                 <td class="px-4 py-4 align-top text-right">
                   <button
+                    v-if="user.status === 'active'"
                     type="button"
-                    class="rounded-full border border-emerald-500/60 bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-emerald-200 hover:border-emerald-400"
-                    :disabled="userSavingId === user.id"
-                    @click="updateStatus(user)"
+                    class="rounded-full border border-amber-500/60 bg-amber-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-amber-200 hover:border-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="archivingUserId === user.id"
+                    @click="openArchiveModal('archive', user)"
                   >
-                    {{ userSavingId === user.id ? 'Saving...' : 'Save' }}
+                    {{ archivingUserId === user.id ? 'Archiving...' : 'Archive' }}
+                  </button>
+                  <button
+                    v-else
+                    type="button"
+                    class="rounded-full border border-sky-500/60 bg-sky-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-sky-200 hover:border-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="archivingUserId === user.id"
+                    @click="openArchiveModal('unarchive', user)"
+                  >
+                    {{ archivingUserId === user.id ? 'Restoring...' : 'Unarchive' }}
                   </button>
                 </td>
               </tr>
@@ -145,7 +147,7 @@
               required
             />
           </div>
-          <div class="grid gap-4 md:grid-cols-2">
+          <div>
             <div>
               <label class="text-xs uppercase tracking-[0.3em] text-slate-500">Role</label>
               <select
@@ -154,16 +156,6 @@
               >
                 <option value="admin">Admin</option>
                 <option value="editor">Editor</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs uppercase tracking-[0.3em] text-slate-500">Status</label>
-              <select
-                v-model="form.status"
-                class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
               </select>
             </div>
           </div>
@@ -190,6 +182,34 @@
       </div>
     </div>
   </transition>
+
+  <div v-if="showArchiveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/95 p-6 text-slate-100 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">{{ archiveModalTitle }}</h3>
+        <button class="text-slate-400 hover:text-white" @click="closeArchiveModal">x</button>
+      </div>
+      <p class="mt-4 text-sm text-slate-300">{{ archiveModalMessage }}</p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
+          @click="closeArchiveModal"
+        >
+          Cancel
+        </button>
+        <button
+          class="rounded-lg px-4 py-2 text-sm font-semibold"
+          :class="archiveModalAction === 'archive'
+            ? 'bg-red-400/20 text-red-100 hover:bg-red-400/30'
+            : 'bg-sky-500/20 text-sky-100 hover:bg-sky-500/30'"
+          :disabled="archivingUserId === archiveTarget?.id"
+          @click="confirmArchiveAction"
+        >
+          {{ archiveModalAction === 'archive' ? 'Archive' : 'Unarchive' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -214,7 +234,10 @@ const showModal = ref(false)
 const users = ref([])
 const usersLoading = ref(false)
 const usersError = ref('')
-const userSavingId = ref(null)
+const archivingUserId = ref(null)
+const showArchiveModal = ref(false)
+const archiveModalAction = ref('')
+const archiveTarget = ref(null)
 const userPage = ref(1)
 const usersPerPage = 10
 
@@ -263,15 +286,77 @@ const fetchUsers = async () => {
   }
 }
 
-const updateStatus = async (user) => {
-  if (!isAdmin.value) return
-  userSavingId.value = user.id
+const archiveModalTitle = computed(() =>
+  archiveModalAction.value === 'archive' ? 'Archive user' : 'Unarchive user'
+)
+
+const archiveModalMessage = computed(() => {
+  if (!archiveTarget.value?.username) return ''
+  return archiveModalAction.value === 'archive'
+    ? `Archive user "${archiveTarget.value.username}"? They will no longer be able to log in.`
+    : `Unarchive user "${archiveTarget.value.username}"? They will be able to log in again.`
+})
+
+const openArchiveModal = (action, user) => {
+  archiveModalAction.value = action
+  archiveTarget.value = user
+  showArchiveModal.value = true
+}
+
+const closeArchiveModal = () => {
+  showArchiveModal.value = false
+  archiveModalAction.value = ''
+  archiveTarget.value = null
+}
+
+const archiveUser = async (user) => {
+  if (!isAdmin.value || !user?.id || user.status !== 'active') return
+  archivingUserId.value = user.id
+  usersError.value = ''
+  success.value = ''
+
   try {
-    await axios.put(`${apiBase}/users/${user.id}`, { status: user.status })
+    await axios.put(`${apiBase}/users/${user.id}`, { status: 'inactive' })
+    user.status = 'inactive'
+    success.value = `User "${user.username}" archived.`
   } catch (err) {
-    usersError.value = err?.response?.data?.message || 'Failed to update user'
+    usersError.value = err?.response?.data?.message || 'Failed to archive user'
   } finally {
-    userSavingId.value = null
+    archivingUserId.value = null
+  }
+}
+
+const unarchiveUser = async (user) => {
+  if (!isAdmin.value || !user?.id || user.status !== 'inactive') return
+  archivingUserId.value = user.id
+  usersError.value = ''
+  success.value = ''
+
+  try {
+    await axios.put(`${apiBase}/users/${user.id}`, { status: 'active' })
+    user.status = 'active'
+    success.value = `User "${user.username}" restored.`
+  } catch (err) {
+    usersError.value = err?.response?.data?.message || 'Failed to unarchive user'
+  } finally {
+    archivingUserId.value = null
+  }
+}
+
+const confirmArchiveAction = async () => {
+  if (!archiveTarget.value) return
+
+  const user = archiveTarget.value
+  const action = archiveModalAction.value
+  closeArchiveModal()
+
+  if (action === 'archive') {
+    await archiveUser(user)
+    return
+  }
+
+  if (action === 'unarchive') {
+    await unarchiveUser(user)
   }
 }
 

@@ -5,8 +5,9 @@
         <span class="text-lg font-black">R</span>
       </div>
       <div>
-        <div class="text-xs uppercase tracking-[0.32em] text-slate-400">BSU REMIS</div>
-        <div class="text-lg font-semibold">Research Monitoring System</div>
+        <div class="text-xs uppercase tracking-[0.32em] text-slate-400">REPO</div>
+        <div class="text-lg font-semibold">Research Extension Publication Office</div>
+        <div class="text-[10px] uppercase tracking-[0.28em] text-slate-400">Research Monitoring System</div>
       </div>
     </div>
     <nav class="hidden items-center gap-6 text-sm text-slate-300 md:flex">

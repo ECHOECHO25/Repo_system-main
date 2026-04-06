@@ -206,7 +206,7 @@
         <section id="reports" class="mt-16 rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-8">
           <div class="flex flex-wrap items-center justify-between gap-6">
             <div>
-              <h2 class="text-3xl font-semibold">Ready to launch your REMIS portal?</h2>
+              <h2 class="text-3xl font-semibold">Ready to launch your REPO portal?</h2>
               <p class="mt-2 max-w-2xl text-sm text-slate-300">
                 Use the data already collected to create a searchable, reliable, and export-ready research system.
               </p>

@@ -21,10 +21,13 @@
 
         <div class="min-w-0">
           <div class="text-xs uppercase tracking-[0.32em] text-slate-400">
-            BSU REMIS
+            REPO
           </div>
           <div class="truncate text-lg font-semibold sm:whitespace-normal">
-            Research Monitoring System
+            Research Extension Publication Office
+            <span class="block text-[10px] uppercase tracking-[0.28em] text-slate-400">
+              Research Monitoring System
+            </span>
           </div>
         </div>
       </div>
@@ -94,7 +97,7 @@
           </div>
           <div>
             <div class="text-xs uppercase tracking-[0.32em] text-slate-400">
-              BSU REMIS
+              REPO
             </div>
             <div class="text-lg font-semibold">
               Dashboard Menu
