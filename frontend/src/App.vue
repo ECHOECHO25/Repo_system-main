@@ -204,8 +204,8 @@ let timer
 const menuItems = [
   { name: 'Dashboard', path: '/dashboard', icon: ChartBarIcon },
   { name: 'Publications', path: '/publications', icon: DocumentTextIcon },
+  { name: 'Author Matches', path: '/author-matches', icon: DocumentTextIcon, requiresAuth: true },
   { name: 'Faculty', path: '/faculty', icon: UserGroupIcon },
-  { name: 'Faculty Masterlist', path: '/faculty-masterlist', icon: UserGroupIcon },
   { name: 'Acknowledgements', path: '/acknowledgements', icon: BookOpenIcon },
   { name: 'Audit Logs', path: '/audit-logs', icon: ClockIcon, requiresAuth: true },
   { name: 'Add User', path: '/add-user', icon: UserPlusIcon, requiresAdmin: true }

@@ -36,7 +36,7 @@
               class="cursor-pointer rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-emerald-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
               :class="{ 'pointer-events-none opacity-60': importing }"
             >
-              {{ importing ? 'Importing...' : 'Import CSV/XLSX' }}
+              {{ importing ? 'Importing...' : 'Import Metrics CSV/XLSX' }}
               <input
                 type="file"
                 accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -68,9 +68,9 @@
     <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
       <div class="overflow-hidden">
         <table class="w-full text-left text-sm text-slate-200">
-          <thead class="bg-slate-900/90 text-xs uppercase tracking-[0.22em] text-slate-400">
+                    <thead class="bg-slate-900/90 text-xs uppercase tracking-[0.22em] text-slate-400">
             <tr>
-              <th v-if="isAuthenticated" class="px-4 py-4">
+              <th v-if="isAuthenticated" class="px-4 py-4 align-top">
                 <input
                   type="checkbox"
                   class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -78,27 +78,93 @@
                   @change="toggleSelectAll"
                 />
               </th>
-              <th class="px-4 py-4">Name</th>
-              <th class="px-4 py-4">
+              <th class="px-4 py-4 align-top">Name</th>
+              <th class="px-4 py-4 align-top">
+                <div class="flex flex-col gap-2">
+                  <span>Campus</span>
+                  <SearchableSelect
+                    v-model="filters.campus"
+                    :options="campusOptions"
+                    placeholder="All"
+                  />
+                </div>
+              </th>
+              <th class="px-4 py-4 align-top">
+                <div class="flex flex-col gap-2">
+                  <span>Position</span>
+                  <SearchableSelect
+                    v-model="filters.position"
+                    :options="positionOptions"
+                    placeholder="All"
+                  />
+                </div>
+              </th>
+              <th class="px-4 py-4 align-top">
+                <div class="flex flex-col gap-2">
+                  <span>College/Division</span>
+                  <SearchableSelect
+                    v-model="filters.college_division"
+                    :options="collegeDivisionOptions"
+                    placeholder="All"
+                  />
+                </div>
+              </th>
+              <th class="px-4 py-4 align-top">
+                <div class="flex flex-col gap-2">
+                  <span>Department/Office/Unit</span>
+                  <SearchableSelect
+                    v-model="filters.department_office_unit"
+                    :options="departmentOptions"
+                    placeholder="All"
+                  />
+                </div>
+              </th>
+              <th class="px-4 py-4 align-top">
+                <div class="flex flex-col gap-2">
+                  <span>Sex</span>
+                  <SearchableSelect
+                    v-model="filters.sex"
+                    :options="['M', 'F']"
+                    placeholder="All"
+                  />
+                </div>
+              </th>
+              <th class="px-4 py-4 align-top">
+                <div class="flex flex-col gap-2">
+                  <span>Teaching</span>
+                  <SearchableSelect
+                    v-model="filters.teaching_status"
+                    :options="['Teaching', 'Non-Teaching']"
+                    placeholder="All"
+                  />
+                </div>
+              </th>
+              <th class="px-4 py-4 align-top">
+                <button type="button" class="flex items-center gap-2" @click="changeSort('publications')">
+                  Publications
+                  <span v-if="sortBy === 'publications'">{{ sortOrder === 'desc' ? 'v' : '^' }}</span>
+                </button>
+              </th>
+              <th class="px-4 py-4 align-top">
                 <button type="button" class="flex items-center gap-2" @click="changeSort('citations')">
                   Citations
-                  <span v-if="sortBy === 'citations'">{{ sortOrder === 'desc' ? '▼' : '▲' }}</span>
+                  <span v-if="sortBy === 'citations'">{{ sortOrder === 'desc' ? 'v' : '^' }}</span>
                 </button>
               </th>
-              <th class="px-4 py-4">
+              <th class="px-4 py-4 align-top">
                 <button type="button" class="flex items-center gap-2" @click="changeSort('h_index')">
                   H-index
-                  <span v-if="sortBy === 'h_index'">{{ sortOrder === 'desc' ? '▼' : '▲' }}</span>
+                  <span v-if="sortBy === 'h_index'">{{ sortOrder === 'desc' ? 'v' : '^' }}</span>
                 </button>
               </th>
-              <th class="px-4 py-4">
+              <th class="px-4 py-4 align-top">
                 <button type="button" class="flex items-center gap-2" @click="changeSort('i10_index')">
                   i-10 Index
-                  <span v-if="sortBy === 'i10_index'">{{ sortOrder === 'desc' ? '▼' : '▲' }}</span>
+                  <span v-if="sortBy === 'i10_index'">{{ sortOrder === 'desc' ? 'v' : '^' }}</span>
                 </button>
               </th>
-              <th class="px-4 py-4">Scholar Profile</th>
-              <th v-if="isAuthenticated" class="px-4 py-4 text-right">Action</th>
+              <th class="px-4 py-4 align-top">Scholar Profile</th>
+              <th v-if="isAuthenticated" class="px-4 py-4 text-right align-top">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -116,6 +182,13 @@
                 />
               </td>
               <td class="px-4 py-4 font-medium text-slate-100">{{ faculty.name }}</td>
+              <td class="px-4 py-4">{{ faculty.campus || '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.position || '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.collegeDivision || '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.departmentOfficeUnit || '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.sex || '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.teachingStatus || '-' }}</td>
+              <td class="px-4 py-4">{{ faculty.publications ?? 0 }}</td>
               <td class="px-4 py-4">{{ faculty.citations ?? '-' }}</td>
               <td class="px-4 py-4">{{ faculty.hIndex ?? '-' }}</td>
               <td class="px-4 py-4">{{ faculty.i10Index ?? '-' }}</td>
@@ -142,7 +215,7 @@
               </td>
             </tr>
             <tr v-if="filteredFaculty.length === 0">
-              <td class="px-4 py-6 text-slate-400" :colspan="isAuthenticated ? 7 : 5">
+              <td class="px-4 py-6 text-slate-400" :colspan="isAuthenticated ? 14 : 13">
                 No matches found. Try a different spelling.
               </td>
             </tr>
@@ -469,22 +542,125 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, defineComponent, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import * as XLSX from 'xlsx'
 import { useAuth } from '../composables/useAuth'
+
+const SearchableSelect = defineComponent({
+  name: 'SearchableSelect',
+  props: {
+    modelValue: {
+      type: String,
+      default: ''
+    },
+    options: {
+      type: Array,
+      default: () => []
+    },
+    placeholder: {
+      type: String,
+      default: 'All'
+    }
+  },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    const isOpen = ref(false)
+    const query = ref('')
+
+    const inputValue = computed(() => {
+      return query.value !== '' ? query.value : (props.modelValue || '')
+    })
+
+    const filteredOptions = computed(() => {
+      const q = query.value.trim().toLowerCase()
+      if (!q) return props.options
+      return props.options.filter((option) =>
+        String(option).toLowerCase().includes(q)
+      )
+    })
+
+    const selectOption = (option) => {
+      const nextValue = option || ''
+      emit('update:modelValue', nextValue)
+      query.value = nextValue
+      isOpen.value = false
+    }
+
+    const onFocus = () => {
+      isOpen.value = true
+    }
+
+    const onBlur = () => {
+      setTimeout(() => {
+        isOpen.value = false
+      }, 150)
+    }
+
+    watch(
+      () => props.modelValue,
+      (next) => {
+        if (!query.value) {
+          query.value = next || ''
+        }
+      }
+    )
+
+    return {
+      isOpen,
+      query,
+      inputValue,
+      filteredOptions,
+      selectOption,
+      onFocus,
+      onBlur
+    }
+  },
+  template: `
+    <div class="relative min-w-[140px]">
+      <input
+        :placeholder="placeholder"
+        class="w-full min-w-[140px] rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-[11px] tracking-normal text-slate-100 focus:border-emerald-400 focus:outline-none"
+        :value="inputValue"
+        @focus="onFocus"
+        @blur="onBlur"
+        @input="query = $event.target.value; isOpen = true"
+      />
+      <div v-if="isOpen" class="absolute z-20 mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-[11px] shadow-2xl">
+        <button
+          type="button"
+          class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
+          @click="selectOption('')"
+        >
+          {{ placeholder }}
+        </button>
+        <button
+          v-for="option in filteredOptions"
+          :key="option"
+          type="button"
+          class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
+          @click="selectOption(option)"
+        >
+          {{ option }}
+        </button>
+        <div v-if="!filteredOptions.length" class="px-2 py-2 text-slate-500">No matches</div>
+      </div>
+    </div>
+  `
+})
 
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 const { isAuthenticated } = useAuth()
 
 const query = ref('')
 const showAddModal = ref(false)
-const facultyList = ref([])
-const loading = ref(false)
+  const facultyList = ref([])
+  const loading = ref(false)
 const pagination = ref({
   current_page: 1,
   per_page: 10,
@@ -503,6 +679,14 @@ const importSummary = ref('')
 const importErrors = ref([])
 const showEditModal = ref(false)
 const selectedFaculty = ref(null)
+const filters = ref({
+  campus: '',
+  teaching_status: '',
+  sex: '',
+  position: '',
+  college_division: '',
+  department_office_unit: ''
+})
 const editErrors = ref({
   name: '',
   citations: '',
@@ -534,18 +718,78 @@ const form = ref({
 })
 
 const filteredFaculty = computed(() => {
-  return facultyList.value
+  const q = query.value.trim().toLowerCase()
+  if (!q) return facultyList.value
+
+  return facultyList.value.filter((faculty) => {
+    const haystack = [
+      faculty.name,
+      faculty.campus,
+      faculty.position,
+      faculty.collegeDivision,
+      faculty.departmentOfficeUnit,
+      faculty.sex,
+      faculty.teachingStatus,
+      faculty.publications,
+      faculty.citations,
+      faculty.hIndex,
+      faculty.i10Index
+    ]
+      .map((value) => String(value ?? '').toLowerCase())
+      .join(' ')
+
+    return haystack.includes(q)
+  })
 })
 
-const mapBackendFaculty = (faculty) => ({
-  id: faculty.id,
-  name: faculty.name,
-  citations: faculty.google_scholar_citations ?? null,
-  hIndex: faculty.h_index ?? null,
-  i10Index: faculty.i10_index ?? null,
-  scholarUrl: faculty.google_scholar_account ?? '',
-  status: faculty.status
+const campusOptions = computed(() => {
+  const set = new Set()
+  facultyList.value.forEach((faculty) => {
+    if (faculty.campus) set.add(faculty.campus)
+  })
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
 })
+
+const positionOptions = computed(() => {
+  const set = new Set()
+  facultyList.value.forEach((faculty) => {
+    if (faculty.position) set.add(faculty.position)
+  })
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+})
+
+const collegeDivisionOptions = computed(() => {
+  const set = new Set()
+  facultyList.value.forEach((faculty) => {
+    if (faculty.collegeDivision) set.add(faculty.collegeDivision)
+  })
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+})
+
+const departmentOptions = computed(() => {
+  const set = new Set()
+  facultyList.value.forEach((faculty) => {
+    if (faculty.departmentOfficeUnit) set.add(faculty.departmentOfficeUnit)
+  })
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+})
+
+  const mapBackendFaculty = (faculty) => ({
+    id: faculty.id,
+    name: faculty.name,
+    publications: faculty.publication_count ?? 0,
+    citations: faculty.google_scholar_citations ?? null,
+    hIndex: faculty.h_index ?? null,
+    i10Index: faculty.i10_index ?? null,
+    scholarUrl: faculty.google_scholar_account ?? '',
+    campus: faculty.masterlist_campus ?? '',
+    teachingStatus: faculty.masterlist_teaching_status ?? '',
+    position: faculty.masterlist_position ?? '',
+    collegeDivision: faculty.masterlist_college_division ?? '',
+    departmentOfficeUnit: faculty.masterlist_department_office_unit ?? '',
+    sex: faculty.masterlist_sex ?? '',
+    status: faculty.status
+  })
 
 const fetchFaculty = async () => {
   loading.value = true
@@ -559,6 +803,12 @@ const fetchFaculty = async () => {
     if (query.value.trim()) {
       params.search = query.value.trim()
     }
+    if (filters.value.campus) params.campus = filters.value.campus
+    if (filters.value.teaching_status) params.teaching_status = filters.value.teaching_status
+    if (filters.value.sex) params.sex = filters.value.sex
+    if (filters.value.position) params.position = filters.value.position
+    if (filters.value.college_division) params.college_division = filters.value.college_division
+    if (filters.value.department_office_unit) params.department_office_unit = filters.value.department_office_unit
     const response = await axios.get(`${apiBase}/faculty`, { params })
     facultyList.value = (response.data.data || []).map(mapBackendFaculty)
     if (response.data.pagination) {
@@ -581,6 +831,19 @@ watch(query, () => {
   }, 300)
 })
 
+let filterTimeout
+watch(
+  filters,
+  () => {
+    clearTimeout(filterTimeout)
+    filterTimeout = setTimeout(() => {
+      pagination.value.current_page = 1
+      fetchFaculty()
+    }, 300)
+  },
+  { deep: true }
+)
+
 onMounted(() => {
   fetchFaculty()
 })
@@ -588,6 +851,20 @@ onMounted(() => {
 const changePage = (page) => {
   if (page < 1 || page > pagination.value.total_pages) return
   pagination.value.current_page = page
+  fetchFaculty()
+}
+
+
+const clearFilters = () => {
+  filters.value = {
+    campus: '',
+    teaching_status: '',
+    sex: '',
+    position: '',
+    college_division: '',
+    department_office_unit: ''
+  }
+  pagination.value.current_page = 1
   fetchFaculty()
 }
 
@@ -1075,3 +1352,4 @@ const recordAudit = async (action, metadata) => {
   }
 }
 </script>
+

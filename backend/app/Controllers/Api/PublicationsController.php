@@ -3,6 +3,8 @@
 namespace App\Controllers\Api;
 
 use App\Models\PublicationModel;
+use App\Models\PublicationAuthorLinkModel;
+use App\Models\FacultyModel;
 use App\Libraries\AuditLogger;
 use CodeIgniter\RESTful\ResourceController;
 
@@ -329,6 +331,9 @@ class PublicationsController extends ResourceController
             $duplicates = 0;
             $errors = [];
 
+            $facultyLookup = $this->buildFacultyLookup();
+            $linkModel = new PublicationAuthorLinkModel();
+
             foreach ($publications as $index => $pub) {
                 $pub['authors'] = $this->normalizeAuthors($pub['authors'] ?? null);
                 if (!empty($pub['year']) && !empty($pub['title'])) {
@@ -343,6 +348,8 @@ class PublicationsController extends ResourceController
                 }
                 if ($this->model->insert($pub)) {
                     $inserted++;
+                    $publicationId = $this->model->getInsertID();
+                    $this->matchPublicationAuthors($linkModel, $facultyLookup, $publicationId, $pub['authors']);
                 } else {
                     $failed++;
                     $errors[] = [
@@ -400,5 +407,92 @@ class PublicationsController extends ResourceController
         }
 
         return json_encode($cleaned);
+    }
+
+    private function buildFacultyLookup(): array
+    {
+        $facultyModel = new FacultyModel();
+        $rows = $facultyModel->select('id, name')
+            ->where('status', 'active')
+            ->where('deleted_at', null)
+            ->findAll();
+
+        $lookup = [];
+        foreach ($rows as $row) {
+            $normalized = $this->normalizePersonName($row['name'] ?? '');
+            if ($normalized === '') {
+                continue;
+            }
+            if (!isset($lookup[$normalized])) {
+                $lookup[$normalized] = [];
+            }
+            $lookup[$normalized][] = (int)$row['id'];
+        }
+
+        return $lookup;
+    }
+
+    private function matchPublicationAuthors(
+        PublicationAuthorLinkModel $linkModel,
+        array $facultyLookup,
+        int $publicationId,
+        string $authorsJson
+    ): void {
+        $authors = json_decode($authorsJson, true);
+        if (!is_array($authors)) {
+            return;
+        }
+
+        foreach ($authors as $author) {
+            $authorName = trim((string)$author);
+            if ($authorName === '') {
+                continue;
+            }
+
+            $normalized = $this->normalizePersonName($authorName);
+            $matches = $normalized !== '' && isset($facultyLookup[$normalized])
+                ? $facultyLookup[$normalized]
+                : [];
+
+            if (count($matches) === 1) {
+                $facultyId = $matches[0];
+                $existing = $linkModel->where('publication_id', $publicationId)
+                    ->where('faculty_id', $facultyId)
+                    ->first();
+                if ($existing) {
+                    continue;
+                }
+                $linkModel->insert([
+                    'publication_id' => $publicationId,
+                    'faculty_id' => $facultyId,
+                    'author_name' => $authorName,
+                    'match_type' => 'auto',
+                    'status' => 'confirmed',
+                ]);
+                continue;
+            }
+
+            $existingPending = $linkModel->where('publication_id', $publicationId)
+                ->where('author_name', $authorName)
+                ->first();
+            if ($existingPending) {
+                continue;
+            }
+            $linkModel->insert([
+                'publication_id' => $publicationId,
+                'faculty_id' => null,
+                'author_name' => $authorName,
+                'match_type' => 'auto',
+                'status' => 'pending',
+            ]);
+        }
+    }
+
+    private function normalizePersonName(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9\s]/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+        return trim($value);
     }
 }

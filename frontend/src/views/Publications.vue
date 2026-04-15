@@ -142,7 +142,16 @@
                   <td class="px-4 py-5 align-top">
                     <div class="min-w-0">
                       <div class="group relative">
-                        <div class="break-words font-semibold text-slate-100">
+                        <a
+                          v-if="pub.url"
+                          :href="pub.url"
+                          target="_blank"
+                          rel="noreferrer"
+                          class="break-words font-semibold text-emerald-200 underline decoration-emerald-400/70 underline-offset-4 transition hover:text-emerald-100"
+                        >
+                          {{ pub.title }}
+                        </a>
+                        <div v-else class="break-words font-semibold text-slate-100">
                           {{ pub.title }}
                         </div>
                         <div
@@ -193,11 +202,117 @@
                         View
                       </button>
                       <button
+                        class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300"
+                        @click="toggleMatchPanel(pub)"
+                      >
+                        Match Authors
+                      </button>
+                      <button
                         class="rounded-full border border-yellow-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-yellow-200 hover:border-yellow-400"
                         @click="confirmEdit(pub)"
                       >
                         Edit
                       </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="isAuthenticated && openMatchId === pub.id" class="bg-slate-950/60">
+                  <td :colspan="isAuthenticated ? 8 : 7" class="px-4 py-5">
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Author Matches</p>
+                          <p class="mt-2 text-xs text-slate-400">
+                            Match authors to faculty records or add new faculty when missing.
+                          </p>
+                        </div>
+                        <button
+                          class="text-xs uppercase tracking-[0.22em] text-slate-400 hover:text-slate-200"
+                          @click="closeMatchPanel"
+                        >
+                          Close
+                        </button>
+                      </div>
+
+                      <div v-if="matchPanels[pub.id]?.loading" class="mt-4 text-xs text-slate-400">
+                        Loading matches...
+                      </div>
+                      <div v-else-if="matchPanels[pub.id]?.error" class="mt-4 text-xs text-rose-300">
+                        {{ matchPanels[pub.id].error }}
+                      </div>
+                      <div v-else class="mt-4 space-y-3">
+                        <div
+                          v-for="(match, index) in (matchPanels[pub.id]?.matches || [])"
+                          :key="`${match.authorName}-${index}`"
+                          class="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
+                        >
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-sm font-semibold text-slate-100">{{ match.authorName }}</p>
+                            <span
+                              class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.22em]"
+                              :class="match.status === 'confirmed'
+                                ? 'bg-emerald-500/10 text-emerald-200'
+                                : 'bg-amber-500/10 text-amber-200'"
+                            >
+                              {{ match.status === 'confirmed' ? 'Matched' : 'Unmatched' }}
+                            </span>
+                          </div>
+
+                          <div v-if="match.status === 'confirmed'" class="mt-3 text-xs text-slate-300">
+                            Linked faculty: <span class="font-semibold text-emerald-200">{{ match.facultyName || 'Unknown' }}</span>
+                          </div>
+
+                          <div v-else class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+                            <div class="relative">
+                              <label class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Search faculty</label>
+                              <input
+                                v-model="match.query"
+                                type="text"
+                                class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+                                @input="debounceMatchSearch(pub.id, index)"
+                                @focus="openMatchOptions(pub.id, index)"
+                              />
+                              <div
+                                v-if="match.optionsOpen && match.options.length"
+                                class="absolute z-20 mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-sm shadow-2xl"
+                              >
+                                <button
+                                  v-for="option in match.options"
+                                  :key="option.id"
+                                  type="button"
+                                  class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
+                                  @click="selectMatchFaculty(pub.id, index, option)"
+                                >
+                                  {{ option.name }}
+                                </button>
+                              </div>
+                              <div v-if="match.loading" class="mt-2 text-xs text-slate-400">Searching...</div>
+                              <p v-if="match.error" class="mt-2 text-xs text-rose-300">{{ match.error }}</p>
+                            </div>
+
+                            <button
+                              type="button"
+                              class="rounded-full border border-emerald-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300 disabled:opacity-50"
+                              :disabled="!match.facultyId"
+                              @click="confirmMatch(pub.id, index)"
+                            >
+                              Assign
+                            </button>
+
+                            <button
+                              type="button"
+                              class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500"
+                              @click="addFacultyFromAuthor(pub.id, index)"
+                            >
+                              Add faculty
+                            </button>
+                          </div>
+                        </div>
+
+                        <div v-if="!(matchPanels[pub.id]?.matches || []).length" class="rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+                          No authors found for this publication.
+                        </div>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -219,7 +334,16 @@
                   {{ pub.publication_type }}
                 </span>
               </div>
-              <div class="mt-2 text-base font-semibold text-slate-100">
+              <a
+                v-if="pub.url"
+                :href="pub.url"
+                target="_blank"
+                rel="noreferrer"
+                class="mt-2 block text-base font-semibold text-emerald-200 underline decoration-emerald-400/70 underline-offset-4 transition hover:text-emerald-100"
+              >
+                {{ pub.title }}
+              </a>
+              <div v-else class="mt-2 text-base font-semibold text-slate-100">
                 {{ pub.title }}
               </div>
               <div class="mt-2 text-xs text-slate-500" v-if="pub.journal_book">
@@ -244,11 +368,99 @@
                   View
                 </button>
                 <button
+                  class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300"
+                  @click="toggleMatchPanel(pub)"
+                >
+                  Match Authors
+                </button>
+                <button
                   class="rounded-full border border-yellow-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-yellow-200 hover:border-yellow-400"
                   @click="confirmEdit(pub)"
                 >
                   Edit
                 </button>
+              </div>
+              <div v-if="isAuthenticated && openMatchId === pub.id" class="mt-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Author Matches</p>
+                  <button class="text-xs uppercase tracking-[0.22em] text-slate-400 hover:text-slate-200" @click="closeMatchPanel">
+                    Close
+                  </button>
+                </div>
+                <div v-if="matchPanels[pub.id]?.loading" class="mt-3 text-xs text-slate-400">Loading matches...</div>
+                <div v-else-if="matchPanels[pub.id]?.error" class="mt-3 text-xs text-rose-300">
+                  {{ matchPanels[pub.id].error }}
+                </div>
+                <div v-else class="mt-3 space-y-3">
+                  <div
+                    v-for="(match, index) in (matchPanels[pub.id]?.matches || [])"
+                    :key="`mobile-${match.authorName}-${index}`"
+                    class="rounded-xl border border-slate-800 bg-slate-900/70 p-3"
+                  >
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <p class="text-sm font-semibold text-slate-100">{{ match.authorName }}</p>
+                      <span
+                        class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.22em]"
+                        :class="match.status === 'confirmed'
+                          ? 'bg-emerald-500/10 text-emerald-200'
+                          : 'bg-amber-500/10 text-amber-200'"
+                      >
+                        {{ match.status === 'confirmed' ? 'Matched' : 'Unmatched' }}
+                      </span>
+                    </div>
+                    <div v-if="match.status === 'confirmed'" class="mt-2 text-xs text-slate-300">
+                      Linked faculty: <span class="font-semibold text-emerald-200">{{ match.facultyName || 'Unknown' }}</span>
+                    </div>
+                    <div v-else class="mt-3 space-y-3">
+                      <div class="relative">
+                        <label class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Search faculty</label>
+                        <input
+                          v-model="match.query"
+                          type="text"
+                          class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+                          @input="debounceMatchSearch(pub.id, index)"
+                          @focus="openMatchOptions(pub.id, index)"
+                        />
+                        <div
+                          v-if="match.optionsOpen && match.options.length"
+                          class="absolute z-20 mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-sm shadow-2xl"
+                        >
+                          <button
+                            v-for="option in match.options"
+                            :key="`mobile-${option.id}`"
+                            type="button"
+                            class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
+                            @click="selectMatchFaculty(pub.id, index, option)"
+                          >
+                            {{ option.name }}
+                          </button>
+                        </div>
+                        <div v-if="match.loading" class="mt-2 text-xs text-slate-400">Searching...</div>
+                        <p v-if="match.error" class="mt-2 text-xs text-rose-300">{{ match.error }}</p>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          class="rounded-full border border-emerald-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300 disabled:opacity-50"
+                          :disabled="!match.facultyId"
+                          @click="confirmMatch(pub.id, index)"
+                        >
+                          Assign
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500"
+                          @click="addFacultyFromAuthor(pub.id, index)"
+                        >
+                          Add faculty
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="!(matchPanels[pub.id]?.matches || []).length" class="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-400">
+                    No authors found for this publication.
+                  </div>
+                </div>
               </div>
             </article>
           </div>
@@ -490,7 +702,10 @@ export default {
         time: ''
       },
       showImportDetails: false,
-      importRunId: 0
+      importRunId: 0,
+      openMatchId: null,
+      matchPanels: {},
+      matchSearchTimers: {}
     }
   },
   computed: {
@@ -644,6 +859,193 @@ export default {
       this.confirmTitle = 'Edit publication';
       this.confirmMessage = 'Do you want to edit this publication?';
       this.showConfirmModal = true;
+    },
+    toggleMatchPanel(pub) {
+      if (this.openMatchId === pub.id) {
+        this.closeMatchPanel();
+        return;
+      }
+      this.openMatchId = pub.id;
+      this.loadMatchPanel(pub);
+    },
+    closeMatchPanel() {
+      this.openMatchId = null;
+    },
+    normalizeAuthorName(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    },
+    buildMatchPanel(authors) {
+      return {
+        loading: false,
+        error: '',
+        matches: authors.map((authorName) => ({
+          authorName,
+          linkId: null,
+          status: 'pending',
+          facultyId: null,
+          facultyName: '',
+          query: '',
+          options: [],
+          optionsOpen: false,
+          loading: false,
+          error: ''
+        }))
+      };
+    },
+    async loadMatchPanel(pub) {
+      if (!pub?.id) return;
+      const authors = this.splitAuthors(pub.authors);
+      const panel = this.buildMatchPanel(authors);
+      panel.loading = true;
+      this.matchPanels = { ...this.matchPanels, [pub.id]: panel };
+
+      try {
+        const response = await axios.get(`${apiBase}/publication-author-links/publication/${pub.id}`);
+        const links = response.data?.data || [];
+        const linkMap = new Map(
+          links.map((link) => [this.normalizeAuthorName(link.author_name), link])
+        );
+
+        panel.matches = panel.matches.map((match) => {
+          const link = linkMap.get(this.normalizeAuthorName(match.authorName));
+          if (!link) return match;
+          return {
+            ...match,
+            linkId: link.id,
+            status: link.status || 'pending',
+            facultyId: link.faculty_id || null,
+            facultyName: link.faculty_name || '',
+            query: link.faculty_name || ''
+          };
+        });
+        panel.error = '';
+      } catch (error) {
+        console.error('Error loading matches:', error);
+        panel.error = 'Failed to load matches.';
+      } finally {
+        panel.loading = false;
+        this.matchPanels = { ...this.matchPanels, [pub.id]: panel };
+      }
+    },
+    openMatchOptions(pubId, index) {
+      const panel = this.matchPanels[pubId];
+      if (!panel) return;
+      const match = panel.matches[index];
+      if (!match?.options?.length) return;
+      match.optionsOpen = true;
+      this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+    },
+    debounceMatchSearch(pubId, index) {
+      if (this.matchSearchTimers[`${pubId}-${index}`]) {
+        clearTimeout(this.matchSearchTimers[`${pubId}-${index}`]);
+      }
+      this.matchSearchTimers[`${pubId}-${index}`] = setTimeout(() => {
+        this.searchFacultyForMatch(pubId, index);
+      }, 300);
+    },
+    async searchFacultyForMatch(pubId, index) {
+      const panel = this.matchPanels[pubId];
+      if (!panel) return;
+      const match = panel.matches[index];
+      if (!match) return;
+      const query = match.query.trim();
+      if (!query) {
+        match.options = [];
+        match.optionsOpen = false;
+        this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+        return;
+      }
+      match.loading = true;
+      match.error = '';
+      this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+      try {
+        const response = await axios.get(`${apiBase}/faculty`, {
+          params: {
+            search: query,
+            per_page: 8
+          }
+        });
+        match.options = (response.data?.data || []).map((faculty) => ({
+          id: faculty.id,
+          name: faculty.name
+        }));
+        match.optionsOpen = true;
+      } catch (error) {
+        console.error('Error searching faculty:', error);
+        match.error = 'Failed to search faculty.';
+      } finally {
+        match.loading = false;
+        this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+      }
+    },
+    selectMatchFaculty(pubId, index, option) {
+      const panel = this.matchPanels[pubId];
+      if (!panel) return;
+      const match = panel.matches[index];
+      if (!match) return;
+      match.facultyId = option.id;
+      match.facultyName = option.name;
+      match.query = option.name;
+      match.optionsOpen = false;
+      match.error = '';
+      this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+    },
+    async confirmMatch(pubId, index) {
+      const panel = this.matchPanels[pubId];
+      if (!panel) return;
+      const match = panel.matches[index];
+      if (!match || !match.facultyId) return;
+      match.error = '';
+      this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+      try {
+        if (match.linkId) {
+          await axios.put(`${apiBase}/publication-author-links/${match.linkId}`, {
+            status: 'confirmed',
+            faculty_id: match.facultyId
+          });
+        } else {
+          await axios.post(`${apiBase}/publication-author-links`, {
+            publication_id: pubId,
+            author_name: match.authorName,
+            faculty_id: match.facultyId,
+            status: 'confirmed'
+          });
+        }
+        await this.loadMatchPanel({ id: pubId, authors: this.splitAuthors(panel.matches.map((m) => m.authorName)) });
+      } catch (error) {
+        console.error('Error confirming match:', error);
+        match.error = 'Failed to assign faculty.';
+        this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+      }
+    },
+    async addFacultyFromAuthor(pubId, index) {
+      const panel = this.matchPanels[pubId];
+      if (!panel) return;
+      const match = panel.matches[index];
+      if (!match) return;
+      match.error = '';
+      this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+      try {
+        const response = await axios.post(`${apiBase}/faculty`, {
+          name: match.authorName,
+          status: 'active'
+        });
+        const facultyId = response.data?.data?.id;
+        if (!facultyId) {
+          match.error = 'Faculty created, but no ID returned.';
+          return;
+        }
+        match.facultyId = facultyId;
+        match.facultyName = response.data?.data?.name || match.authorName;
+        await this.confirmMatch(pubId, index);
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          match.error = 'Faculty already exists. Search and select it.';
+        } else {
+          match.error = 'Failed to create faculty.';
+        }
+        this.matchPanels = { ...this.matchPanels, [pubId]: panel };
+      }
     },
 
     confirmDelete(pub) {

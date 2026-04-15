@@ -303,7 +303,7 @@
           </div>
 
           <p class="text-xs text-slate-300">
-            Inserted: {{ importResults.inserted }} | Skipped: {{ importResults.skipped.length }}
+            Inserted: {{ importResults.inserted }} | Updated: {{ importResults.updated }} | Skipped: {{ importResults.skipped.length }}
           </p>
 
           <div v-if="importResults.skipped.length" class="mt-4 max-h-64 overflow-auto rounded-xl border border-slate-800">
@@ -381,7 +381,7 @@ const pagination = ref({
 })
 const showModal = ref(false)
 const showImportResults = ref(false)
-const importResults = ref({ inserted: 0, skipped: [] })
+const importResults = ref({ inserted: 0, updated: 0, skipped: [] })
 const importing = ref(false)
 const submitError = ref('')
 const submitting = ref(false)
@@ -568,6 +568,7 @@ const handleFileUpload = async (event) => {
     })
     importResults.value = {
       inserted: response.data?.inserted || 0,
+      updated: response.data?.updated || 0,
       skipped: response.data?.skipped || []
     }
     showImportResults.value = true
@@ -575,6 +576,7 @@ const handleFileUpload = async (event) => {
   } catch (err) {
     importResults.value = {
       inserted: 0,
+      updated: 0,
       skipped: [{ row: 0, reason: err?.response?.data?.message || 'Import failed' }]
     }
     showImportResults.value = true
@@ -944,7 +946,8 @@ const goToPage = (nextPage) => {
 }
 .modal-enter-from,
 .modal-leave-to {
+  
   opacity: 0;
   transform: translateY(8px);
 }
-</style>
+</style>  

@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Models\FacultyMasterlistModel;
+use App\Models\FacultyModel;
 use App\Libraries\AuditLogger;
 use CodeIgniter\RESTful\ResourceController;
 
@@ -222,8 +223,11 @@ class FacultyMasterlistController extends ResourceController
             }
 
             $inserted = 0;
+            $updated = 0;
             $skipped = [];
             $seen = [];
+            $facultyModel = new FacultyModel();
+            $facultyNameSet = $this->buildFacultyNameSet($facultyModel);
 
             foreach ($rows as $index => $row) {
                 $data = $this->normalizeRow($row);
@@ -235,9 +239,20 @@ class FacultyMasterlistController extends ResourceController
                 }
 
                 $key = strtolower($data['name']) . '|' . strtolower($data['campus'] ?? '');
-                if (isset($seen[$key]) || $this->isDuplicate($data['name'], $data['campus'])) {
-                    $skipped[] = ['row' => $rowNumber, 'reason' => 'Duplicate record'];
-                    $seen[$key] = true;
+                if (isset($seen[$key])) {
+                    $skipped[] = ['row' => $rowNumber, 'reason' => 'Duplicate in file'];
+                    continue;
+                }
+                $seen[$key] = true;
+
+                $duplicateId = $this->findDuplicateId($data['name'], $data['campus']);
+                if ($duplicateId) {
+                    if ($this->model->update($duplicateId, $data)) {
+                        $updated++;
+                        $this->syncFacultyFromMasterlist($facultyModel, $facultyNameSet, $data);
+                        continue;
+                    }
+                    $skipped[] = ['row' => $rowNumber, 'reason' => 'Failed to update existing record'];
                     continue;
                 }
 
@@ -247,17 +262,20 @@ class FacultyMasterlistController extends ResourceController
                 }
 
                 $inserted++;
-                $seen[$key] = true;
+
+                $this->syncFacultyFromMasterlist($facultyModel, $facultyNameSet, $data);
             }
 
             AuditLogger::log('masterlist.import', 'faculty_masterlist', null, 'Masterlist import completed', [
                 'inserted' => $inserted,
+                'updated' => $updated,
                 'skipped' => count($skipped)
             ]);
 
             return $this->respond([
                 'status' => 'success',
                 'inserted' => $inserted,
+                'updated' => $updated,
                 'skipped' => $skipped
             ]);
         } catch (\Exception $e) {
@@ -390,5 +408,70 @@ class FacultyMasterlistController extends ResourceController
         }
 
         return (bool)$builder->get()->getRowArray();
+    }
+
+    private function findDuplicateId(string $name, ?string $campus): ?int
+    {
+        $builder = $this->model->builder();
+        $db = \Config\Database::connect();
+        $escapedName = $db->escape(strtolower($name));
+        $builder->select('id');
+        $builder->where("LOWER(TRIM(name)) = {$escapedName}", null, false);
+
+        if ($campus === null) {
+            $builder->where('campus', null);
+        } else {
+            $escapedCampus = $db->escape(strtolower($campus));
+            $builder->where("LOWER(TRIM(campus)) = {$escapedCampus}", null, false);
+        }
+
+        $row = $builder->get()->getRowArray();
+        return $row ? (int)$row['id'] : null;
+    }
+
+    private function buildFacultyNameSet(FacultyModel $facultyModel): array
+    {
+        $rows = $facultyModel->select('name')
+            ->where('deleted_at', null)
+            ->findAll();
+
+        $set = [];
+        foreach ($rows as $row) {
+            $normalized = $this->normalizePersonName($row['name'] ?? '');
+            if ($normalized !== '') {
+                $set[$normalized] = true;
+            }
+        }
+        return $set;
+    }
+
+    private function syncFacultyFromMasterlist(
+        FacultyModel $facultyModel,
+        array &$facultyNameSet,
+        array $masterlistRow
+    ): void {
+        $name = $masterlistRow['name'] ?? '';
+        if (!$name) {
+            return;
+        }
+        $normalized = $this->normalizePersonName($name);
+        if ($normalized === '' || isset($facultyNameSet[$normalized])) {
+            return;
+        }
+
+        $facultyModel->insert([
+            'name' => $name,
+            'college_institute' => $masterlistRow['college_division'] ?? null,
+            'status' => 'active'
+        ]);
+        $facultyNameSet[$normalized] = true;
+    }
+
+    private function normalizePersonName(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9\s]/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+        return trim($value);
     }
 }

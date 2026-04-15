@@ -36,40 +36,128 @@ class FacultyController extends ResourceController
         try {
             $search = $this->request->getGet('search');
             $college = $this->request->getGet('college');
+            $campus = $this->request->getGet('campus');
+            $teachingStatus = $this->request->getGet('teaching_status');
+            $sex = $this->request->getGet('sex');
+            $position = $this->request->getGet('position');
+            $collegeDivision = $this->request->getGet('college_division');
+            $department = $this->request->getGet('department_office_unit');
             $page = $this->request->getGet('page') ?? 1;
             $perPage = $this->request->getGet('per_page') ?? 20;
             $sort = $this->request->getGet('sort');
             $order = strtolower($this->request->getGet('order') ?? 'desc');
 
-            $builder = $this->model->builder();
-            $builder->where('status', 'active');
-            $builder->where('deleted_at', null);
+            $baseBuilder = $this->model->builder();
+            $baseBuilder->where('faculty.status', 'active');
+            $baseBuilder->where('faculty.deleted_at', null);
+            $needsMasterlist = $search || $campus || $teachingStatus || $sex || $position || $collegeDivision || $department;
+            $joinClause = "fm.id = (SELECT fm2.id FROM faculty_masterlist fm2 WHERE LOWER(TRIM(fm2.name)) = LOWER(TRIM(faculty.name)) ORDER BY fm2.id ASC LIMIT 1)";
+            if ($needsMasterlist) {
+                $baseBuilder->join('faculty_masterlist fm', $joinClause, 'left', false);
+            }
 
             // Apply filters
             if ($search) {
-                $builder->groupStart()
-                        ->like('name', $search)
-                        ->orLike('email', $search)
+                $baseBuilder->groupStart()
+                        ->like('faculty.name', $search)
+                        ->orLike('faculty.email', $search)
+                        ->orLike('fm.campus', $search)
+                        ->orLike('fm.teaching_status', $search)
+                        ->orLike('fm.sex', $search)
+                        ->orLike('fm.position', $search)
+                        ->orLike('fm.college_division', $search)
+                        ->orLike('fm.department_office_unit', $search)
                         ->groupEnd();
             }
             if ($college) {
-                $builder->where('college_institute', $college);
+                $baseBuilder->where('faculty.college_institute', $college);
+            }
+            if ($campus) {
+                $baseBuilder->where('fm.campus', $campus);
+            }
+            if ($teachingStatus) {
+                $baseBuilder->where('fm.teaching_status', $teachingStatus);
+            }
+            if ($sex) {
+                $baseBuilder->where('fm.sex', $sex);
+            }
+            if ($position) {
+                $baseBuilder->like('fm.position', $position);
+            }
+            if ($collegeDivision) {
+                $baseBuilder->like('fm.college_division', $collegeDivision);
+            }
+            if ($department) {
+                $baseBuilder->like('fm.department_office_unit', $department);
             }
 
             // Get total count
-            $total = $builder->countAllResults(false);
+            $totalRow = $baseBuilder
+                ->select('COUNT(DISTINCT faculty.id) as total', false)
+                ->get()
+                ->getRow();
+            $total = (int)($totalRow->total ?? 0);
 
             // Sorting
             $allowedSorts = [
                 'name' => 'name',
                 'citations' => 'google_scholar_citations',
                 'h_index' => 'h_index',
-                'i10_index' => 'i10_index'
+                'i10_index' => 'i10_index',
+                'publications' => 'publication_count'
             ];
             $sortColumn = $allowedSorts[$sort] ?? 'name';
             $sortOrder = $order === 'asc' ? 'ASC' : 'DESC';
 
             // Get paginated data
+            $builder = $this->model->builder();
+            $builder->select('faculty.*');
+            $builder->select('fm.campus as masterlist_campus');
+            $builder->select('fm.teaching_status as masterlist_teaching_status');
+            $builder->select('fm.position as masterlist_position');
+            $builder->select('fm.college_division as masterlist_college_division');
+            $builder->select('fm.department_office_unit as masterlist_department_office_unit');
+            $builder->select('fm.sex as masterlist_sex');
+            $builder->select('COUNT(pal.id) as publication_count', false);
+            $builder->join('faculty_masterlist fm', $joinClause, 'left', false);
+            $builder->join('publication_author_links pal', "pal.faculty_id = faculty.id AND pal.status = 'confirmed'", 'left');
+            $builder->where('faculty.status', 'active');
+            $builder->where('faculty.deleted_at', null);
+            if ($search) {
+                $builder->groupStart()
+                        ->like('faculty.name', $search)
+                        ->orLike('faculty.email', $search)
+                        ->orLike('fm.campus', $search)
+                        ->orLike('fm.teaching_status', $search)
+                        ->orLike('fm.sex', $search)
+                        ->orLike('fm.position', $search)
+                        ->orLike('fm.college_division', $search)
+                        ->orLike('fm.department_office_unit', $search)
+                        ->groupEnd();
+            }
+            if ($college) {
+                $builder->where('faculty.college_institute', $college);
+            }
+            if ($campus) {
+                $builder->where('fm.campus', $campus);
+            }
+            if ($teachingStatus) {
+                $builder->where('fm.teaching_status', $teachingStatus);
+            }
+            if ($sex) {
+                $builder->where('fm.sex', $sex);
+            }
+            if ($position) {
+                $builder->like('fm.position', $position);
+            }
+            if ($collegeDivision) {
+                $builder->like('fm.college_division', $collegeDivision);
+            }
+            if ($department) {
+                $builder->like('fm.department_office_unit', $department);
+            }
+            $builder->groupBy('faculty.id');
+
             $faculty = $builder->orderBy($sortColumn, $sortOrder)
                               ->limit($perPage, ($page - 1) * $perPage)
                               ->get()

@@ -29,6 +29,95 @@
               <label class="text-xs uppercase tracking-[0.22em] text-slate-500">Authors</label>
               <textarea v-model="form.authors" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm" rows="2" :disabled="isView" required></textarea>
             </div>
+            <div class="md:col-span-6">
+              <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Author Matches</p>
+                    <p class="mt-2 text-xs text-slate-400">
+                      Match authors to faculty records. Unmatched names can be added as new faculty.
+                    </p>
+                  </div>
+                  <span v-if="!publication?.id" class="text-xs text-slate-400">Save publication to manage matches.</span>
+                </div>
+
+                <div v-if="publication?.id" class="mt-4 space-y-3">
+                  <div
+                    v-for="(match, index) in authorMatches"
+                    :key="`${match.authorName}-${index}`"
+                    class="rounded-xl border border-slate-800 bg-slate-900/70 p-3"
+                  >
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <p class="text-sm font-semibold text-slate-100">{{ match.authorName }}</p>
+                      <span
+                        class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.22em]"
+                        :class="match.status === 'confirmed'
+                          ? 'bg-emerald-500/10 text-emerald-200'
+                          : 'bg-amber-500/10 text-amber-200'"
+                      >
+                        {{ match.status === 'confirmed' ? 'Matched' : 'Unmatched' }}
+                      </span>
+                    </div>
+
+                    <div v-if="match.status === 'confirmed'" class="mt-3 text-xs text-slate-300">
+                      Linked faculty: <span class="font-semibold text-emerald-200">{{ match.facultyName || 'Unknown' }}</span>
+                    </div>
+
+                    <div v-else class="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+                      <div class="relative">
+                        <label class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Search faculty</label>
+                        <input
+                          v-model="match.query"
+                          type="text"
+                          class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+                          :disabled="isView"
+                          @input="debounceMatchSearch(index)"
+                          @focus="openMatchOptions(index)"
+                        />
+                        <div
+                          v-if="match.optionsOpen && match.options.length"
+                          class="absolute z-20 mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-sm shadow-2xl"
+                        >
+                          <button
+                            v-for="option in match.options"
+                            :key="option.id"
+                            type="button"
+                            class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
+                            @click="selectMatchFaculty(index, option)"
+                          >
+                            {{ option.name }}
+                          </button>
+                        </div>
+                        <div v-if="match.loading" class="mt-2 text-xs text-slate-400">Searching...</div>
+                        <p v-if="match.error" class="mt-2 text-xs text-rose-300">{{ match.error }}</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="rounded-full border border-emerald-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300 disabled:opacity-50"
+                        :disabled="isView || !match.facultyId"
+                        @click="confirmMatch(index)"
+                      >
+                        Assign
+                      </button>
+
+                      <button
+                        type="button"
+                        class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500 disabled:opacity-50"
+                        :disabled="isView"
+                        @click="addFacultyFromAuthor(index)"
+                      >
+                        Add faculty
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="!authorMatches.length" class="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-400">
+                    No authors found for this publication.
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="md:col-span-3">
               <label class="text-xs uppercase tracking-[0.22em] text-slate-500">Journal/Book</label>
               <input v-model="form.journal_book" type="text" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm" :disabled="isView" />
@@ -99,7 +188,9 @@ export default {
   data() {
     return {
       saving: false,
-      form: this.emptyForm()
+      form: this.emptyForm(),
+      authorMatches: [],
+      matchSearchTimers: {}
     };
   },
   computed: {
@@ -116,10 +207,12 @@ export default {
     show(newVal) {
       if (newVal) {
         this.hydrateForm();
+        this.loadAuthorMatches();
       }
     },
     publication() {
       this.hydrateForm();
+      this.loadAuthorMatches();
     }
   },
   methods: {
@@ -155,6 +248,160 @@ export default {
         };
       } else {
         this.form = this.emptyForm();
+      }
+    },
+    normalizeAuthorName(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    },
+    buildInitialMatches(authors) {
+      this.authorMatches = authors.map((authorName) => ({
+        authorName,
+        linkId: null,
+        status: 'pending',
+        facultyId: null,
+        facultyName: '',
+        query: '',
+        options: [],
+        optionsOpen: false,
+        loading: false,
+        error: ''
+      }));
+    },
+    async loadAuthorMatches() {
+      if (!this.publication?.id) {
+        this.authorMatches = [];
+        return;
+      }
+
+      const authors = this.splitAuthors(this.form.authors);
+      this.buildInitialMatches(authors);
+
+      if (!authors.length) return;
+
+      try {
+        const response = await axios.get(`${apiBase}/publication-author-links/publication/${this.publication.id}`);
+        const links = response.data?.data || [];
+        const linkMap = new Map(
+          links.map((link) => [this.normalizeAuthorName(link.author_name), link])
+        );
+
+        this.authorMatches = this.authorMatches.map((match) => {
+          const link = linkMap.get(this.normalizeAuthorName(match.authorName));
+          if (!link) return match;
+          return {
+            ...match,
+            linkId: link.id,
+            status: link.status || 'pending',
+            facultyId: link.faculty_id || null,
+            facultyName: link.faculty_name || '',
+            query: link.faculty_name || ''
+          };
+        });
+      } catch (error) {
+        console.error('Error loading author matches:', error);
+      }
+    },
+    openMatchOptions(index) {
+      const match = this.authorMatches[index];
+      if (match?.options?.length) {
+        match.optionsOpen = true;
+      }
+    },
+    debounceMatchSearch(index) {
+      if (!this.authorMatches[index]) return;
+      if (this.matchSearchTimers[index]) {
+        clearTimeout(this.matchSearchTimers[index]);
+      }
+      this.matchSearchTimers[index] = setTimeout(() => {
+        this.searchFaculty(index);
+      }, 300);
+    },
+    async searchFaculty(index) {
+      const match = this.authorMatches[index];
+      if (!match) return;
+      const query = match.query.trim();
+      if (!query) {
+        match.options = [];
+        match.optionsOpen = false;
+        return;
+      }
+      match.loading = true;
+      match.error = '';
+      try {
+        const response = await axios.get(`${apiBase}/faculty`, {
+          params: {
+            search: query,
+            per_page: 8
+          }
+        });
+        match.options = (response.data?.data || []).map((faculty) => ({
+          id: faculty.id,
+          name: faculty.name
+        }));
+        match.optionsOpen = true;
+      } catch (error) {
+        console.error('Error searching faculty:', error);
+        match.error = 'Failed to search faculty.';
+      } finally {
+        match.loading = false;
+      }
+    },
+    selectMatchFaculty(index, option) {
+      const match = this.authorMatches[index];
+      if (!match) return;
+      match.facultyId = option.id;
+      match.facultyName = option.name;
+      match.query = option.name;
+      match.optionsOpen = false;
+      match.error = '';
+    },
+    async confirmMatch(index) {
+      const match = this.authorMatches[index];
+      if (!match || !match.facultyId || !this.publication?.id) return;
+      match.error = '';
+      try {
+        if (match.linkId) {
+          await axios.put(`${apiBase}/publication-author-links/${match.linkId}`, {
+            status: 'confirmed',
+            faculty_id: match.facultyId
+          });
+        } else {
+          await axios.post(`${apiBase}/publication-author-links`, {
+            publication_id: this.publication.id,
+            author_name: match.authorName,
+            faculty_id: match.facultyId,
+            status: 'confirmed'
+          });
+        }
+        await this.loadAuthorMatches();
+      } catch (error) {
+        console.error('Error confirming match:', error);
+        match.error = 'Failed to assign faculty.';
+      }
+    },
+    async addFacultyFromAuthor(index) {
+      const match = this.authorMatches[index];
+      if (!match || !this.publication?.id) return;
+      match.error = '';
+      try {
+        const response = await axios.post(`${apiBase}/faculty`, {
+          name: match.authorName,
+          status: 'active'
+        });
+        const facultyId = response.data?.data?.id;
+        if (!facultyId) {
+          match.error = 'Faculty created, but no ID returned.';
+          return;
+        }
+        match.facultyId = facultyId;
+        match.facultyName = response.data?.data?.name || match.authorName;
+        await this.confirmMatch(index);
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          match.error = 'Faculty already exists. Search and select it.';
+        } else {
+          match.error = 'Failed to create faculty.';
+        }
       }
     },
     handleClose() {
