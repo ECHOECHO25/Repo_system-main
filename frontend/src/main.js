@@ -13,6 +13,7 @@ import AuditLogs from './views/AuditLogs.vue'
 import AddUser from './views/AddUser.vue'
 import Acknowledgements from './views/Acknowledgements.vue'
 import AuthorMatches from './views/AuthorMatches.vue'
+import { useAuth } from './composables/useAuth'
 
 const routes = [
   { path: '/', redirect: '/dashboard' },
@@ -23,7 +24,8 @@ const routes = [
   { path: '/audit-logs', component: AuditLogs, meta: { requiresAuth: true } },
   { path: '/author-matches', component: AuthorMatches, meta: { requiresAuth: true } },
   { path: '/acknowledgements', component: Acknowledgements },
-  { path: '/add-user', component: AddUser, meta: { requiresAuth: true } }
+  { path: '/add-user', component: AddUser, meta: { requiresAuth: true } },
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 
 const router = createRouter({
@@ -33,27 +35,47 @@ const router = createRouter({
 
 axios.defaults.withCredentials = true
 
-let authChecked = false
-let isAuthenticated = false
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const { setUser, clearUser } = useAuth()
+let isHandlingUnauthorized = false
+
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error?.response?.status
+    const requestUrl = String(error?.config?.url || '')
+    const isLoginRequest = requestUrl.includes('/auth/login')
+    const isAuthCheck = requestUrl.includes('/auth/me')
+
+    if (status === 401 && !isLoginRequest && !isAuthCheck) {
+      clearUser()
+      if (router.currentRoute.value.path !== '/login' && !isHandlingUnauthorized) {
+        isHandlingUnauthorized = true
+        try {
+          await router.push('/login')
+        } finally {
+          isHandlingUnauthorized = false
+        }
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 
 router.beforeEach(async (to) => {
   if (!to.meta.requiresAuth) return true
 
-  if (!authChecked) {
-    try {
-      await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/auth/me`)
-      isAuthenticated = true
-    } catch {
-      isAuthenticated = false
+  try {
+    const response = await axios.get(`${apiBase}/auth/me`)
+    if (response?.data?.data) {
+      setUser(response.data.data)
     }
-    authChecked = true
-  }
-
-  if (!isAuthenticated) {
+    return true
+  } catch {
+    clearUser()
     return { path: '/login' }
   }
 
-  return true
 })
 
 const app = createApp(App)

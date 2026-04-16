@@ -125,9 +125,8 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
+                <template v-for="pub in publicationRows" :key="pub.id">
                 <tr
-                  v-for="pub in publications"
-                  :key="pub.id"
                   class="transition hover:bg-slate-900/60"
                 >
                   <td v-if="isAuthenticated" class="px-4 py-5 align-top">
@@ -316,13 +315,14 @@
                     </div>
                   </td>
                 </tr>
+                </template>
               </tbody>
             </table>
           </div>
 
           <div class="space-y-4 p-4 lg:hidden">
             <article
-              v-for="pub in publications"
+              v-for="pub in publicationRows"
               :key="`card-${pub.id}`"
               class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
             >
@@ -729,11 +729,14 @@ export default {
     currentFailedRows() {
       return this.importResult.failedRows.filter(item => item.runId === this.importRunId);
     },
+    publicationRows() {
+      return (this.publications || []).filter((pub) => pub && typeof pub === 'object' && pub.id !== undefined && pub.id !== null);
+    },
     allSelected() {
-      if (!this.publications.length) {
+      if (!this.publicationRows.length) {
         return false;
       }
-      return this.publications.every(pub => this.selectedIds.includes(pub.id));
+      return this.publicationRows.every(pub => this.selectedIds.includes(pub.id));
     }
   },
   mounted() {
@@ -747,11 +750,12 @@ export default {
         const params = {
           page: this.pagination.current_page,
           per_page: this.pagination.per_page,
+          matched_only: 1,
           ...this.filters
         };
 
         const response = await axios.get(`${apiBase}/publications`, { params });
-        this.publications = response.data.data;
+        this.publications = Array.isArray(response.data?.data) ? response.data.data : [];
         this.pagination = response.data.pagination;
         this.selectedIds = [];
       } catch (error) {
@@ -795,7 +799,7 @@ export default {
         this.selectedIds = [];
         return;
       }
-      this.selectedIds = this.publications.map(pub => pub.id);
+      this.selectedIds = this.publicationRows.map(pub => pub.id);
     },
     toggleSelectRow(id) {
       if (!id) return;
@@ -1447,6 +1451,7 @@ export default {
         const params = {
           page: 1,
           per_page: 10000,
+          matched_only: 1,
           ...this.filters
         };
 

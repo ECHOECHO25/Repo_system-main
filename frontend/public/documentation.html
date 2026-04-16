@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REPO System Documentation</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0f766e;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 24px auto;
+      padding: 0 16px 40px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+    }
+
+    h2 {
+      margin-top: 24px;
+      margin-bottom: 8px;
+      font-size: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    p {
+      margin: 6px 0;
+      color: var(--text);
+    }
+
+    .muted {
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 18px;
+      flex-wrap: wrap;
+    }
+
+    button, a.btn {
+      border: 1px solid #cbd5e1;
+      background: var(--surface);
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .doc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .diagram-actions {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0 12px;
+      flex-wrap: wrap;
+    }
+
+    .diagram-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      overflow: auto;
+    }
+
+    ul {
+      margin: 6px 0 8px 18px;
+      padding: 0;
+    }
+
+    li {
+      margin: 2px 0;
+    }
+
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>REPO Research Monitoring System Documentation</h1>
+    <p class="muted">Use this page for reading, printing, or downloading a Word-openable file.</p>
+
+    <div class="actions">
+      <button id="downloadDoc" class="primary" type="button">Download as Word (.doc)</button>
+      <button id="printDoc" type="button">Print / Save PDF</button>
+    </div>
+
+    <div id="docContent" class="doc">
+      <h2>1. System Overview</h2>
+      <p>This project is a full-stack <strong>Research Extension Publication Office (REPO) Research Monitoring System</strong> for Benguet State University.</p>
+      <p>It is used to:</p>
+      <ul>
+        <li>Manage publication records</li>
+        <li>Track faculty research metrics (citations, H-index, i10-index)</li>
+        <li>Match publication authors to faculty profiles</li>
+        <li>Generate dashboard KPIs and trend analytics</li>
+        <li>Manage acknowledgements records</li>
+        <li>Manage users and login sessions</li>
+        <li>Record audit logs for key actions</li>
+      </ul>
+
+      <h2>2. Technology Stack</h2>
+      <ul>
+        <li>Frontend: Vue 3 + Vite + Tailwind + Axios + Chart.js + ExcelJS</li>
+        <li>Backend: PHP 8.1+ + CodeIgniter 4 (REST APIs)</li>
+        <li>Database: MySQL (MySQLi driver)</li>
+        <li>Auth: Session-based authentication with role checks</li>
+      </ul>
+
+      <h2>3. Repository Structure</h2>
+      <ul>
+        <li><code>frontend/</code>: Vue SPA</li>
+        <li><code>backend/</code>: CodeIgniter API and DB migrations</li>
+      </ul>
+      <p>Key backend folders:</p>
+      <ul>
+        <li><code>backend/app/Controllers/Api</code>: REST controllers</li>
+        <li><code>backend/app/Models</code>: DB models</li>
+        <li><code>backend/app/Database/Migrations</code>: schema definitions</li>
+        <li><code>backend/app/Libraries/AuditLogger.php</code>: audit helper</li>
+      </ul>
+      <p>Key frontend folders:</p>
+      <ul>
+        <li><code>frontend/src/views</code>: page-level modules (Dashboard, Publications, Faculty, etc.)</li>
+        <li><code>frontend/src/composables/useAuth.js</code>: auth state helper</li>
+        <li><code>frontend/src/main.js</code>: active route definitions and route guards</li>
+      </ul>
+
+      <h2>4. Core Modules</h2>
+      <ul>
+        <li>Dashboard: KPIs, yearly trends, college/type analytics, activity snapshots</li>
+        <li>Publications: CRUD, filtering, pagination, bulk import, duplicate detection</li>
+        <li>Faculty: CRUD, filtering (including masterlist-linked fields), top rankings</li>
+        <li>Author Matches: pending/confirmed publication-to-faculty links</li>
+        <li>Acknowledgements: CRUD with item lines (volumes/copies/remarks)</li>
+        <li>Audit Logs: paginated action log with search</li>
+        <li>Users: admin-managed user creation/status updates</li>
+      </ul>
+
+      <h2>5. Frontend Routes (Active)</h2>
+      <p>Defined in <code>frontend/src/main.js</code>:</p>
+      <ul>
+        <li><code>/login</code></li>
+        <li><code>/dashboard</code></li>
+        <li><code>/publications</code></li>
+        <li><code>/faculty</code></li>
+        <li><code>/author-matches</code> (requires auth)</li>
+        <li><code>/audit-logs</code> (requires auth)</li>
+        <li><code>/acknowledgements</code></li>
+        <li><code>/add-user</code> (requires auth)</li>
+      </ul>
+
+      <h2>6. API Base and CORS</h2>
+      <ul>
+        <li>Frontend API base: <code>VITE_API_URL</code> (fallback: <code>http://localhost:8080/api</code>)</li>
+        <li>Backend allowed frontend origin: <code>FRONTEND_ORIGIN</code> (fallback: <code>http://localhost:5173</code>)</li>
+        <li>Credentials are enabled (<code>withCredentials=true</code>) for session cookies.</li>
+      </ul>
+
+      <h2>7. Authentication and Authorization</h2>
+      <p>Auth endpoints:</p>
+      <ul>
+        <li><code>POST /api/auth/login</code></li>
+        <li><code>GET /api/auth/me</code></li>
+        <li><code>POST /api/auth/logout</code></li>
+      </ul>
+      <p>Behavior:</p>
+      <ul>
+        <li>Session stores: <code>user_id</code>, <code>username</code>, <code>role</code>, login timestamps</li>
+        <li>Login throttling: lockout for 60 seconds after 5 failed attempts</li>
+        <li>Frontend route guard checks <code>/auth/me</code> for protected pages</li>
+        <li>Role model: <code>guest/viewer</code> should be view-only, <code>editor</code> can add/edit records, <code>admin</code> can also manage users</li>
+        <li><code>UsersController</code> currently enforces <code>admin</code> for user create/list/update</li>
+        <li>Recommendation: enforce write permissions server-side for publications/faculty/acknowledgements to fully protect view-only users</li>
+      </ul>
+
+      <h2>8. API Endpoints Summary</h2>
+      <p><strong>Dashboard</strong></p>
+      <ul>
+        <li><code>GET /api/dashboard</code></li>
+        <li><code>GET /api/dashboard/publications-summary</code></li>
+        <li><code>GET /api/dashboard/faculty-metrics</code></li>
+        <li><code>GET /api/dashboard/activity?days=30</code></li>
+      </ul>
+
+      <p><strong>Publications</strong></p>
+      <ul>
+        <li><code>GET /api/publications</code></li>
+        <li><code>GET /api/publications/{id}</code></li>
+        <li><code>GET /api/publications/recent?limit=10</code></li>
+        <li><code>GET /api/publications/by-year/{year}</code></li>
+        <li><code>POST /api/publications</code></li>
+        <li><code>PUT /api/publications/{id}</code></li>
+        <li><code>DELETE /api/publications/{id}</code></li>
+        <li><code>POST /api/publications/bulk-import</code></li>
+      </ul>
+
+      <p><strong>Publication Author Links</strong></p>
+      <ul>
+        <li><code>GET /api/publication-author-links/pending</code></li>
+        <li><code>GET /api/publication-author-links/publication/{publicationId}</code></li>
+        <li><code>POST /api/publication-author-links</code></li>
+        <li><code>PUT /api/publication-author-links/{id}</code></li>
+      </ul>
+
+      <p><strong>Faculty</strong></p>
+      <ul>
+        <li><code>GET /api/faculty</code></li>
+        <li><code>GET /api/faculty/{id}</code></li>
+        <li><code>POST /api/faculty</code></li>
+        <li><code>PUT /api/faculty/{id}</code></li>
+        <li><code>DELETE /api/faculty/{id}</code></li>
+        <li><code>GET /api/faculty/top-citations</code></li>
+        <li><code>GET /api/faculty/top-hindex</code></li>
+      </ul>
+
+      <p><strong>Acknowledgements</strong></p>
+      <ul>
+        <li><code>GET /api/acknowledgements</code></li>
+        <li><code>GET /api/acknowledgements/{id}</code></li>
+        <li><code>POST /api/acknowledgements</code></li>
+        <li><code>PUT /api/acknowledgements/{id}</code></li>
+        <li><code>DELETE /api/acknowledgements/{id}</code></li>
+      </ul>
+
+      <p><strong>Audit Logs</strong></p>
+      <ul>
+        <li><code>GET /api/audit-logs</code></li>
+        <li><code>POST /api/audit-logs/record</code></li>
+      </ul>
+
+      <p><strong>Users</strong></p>
+      <ul>
+        <li><code>POST /api/users</code> (admin)</li>
+        <li><code>GET /api/users</code> (admin)</li>
+        <li><code>PUT /api/users/{id}</code> (admin)</li>
+      </ul>
+
+      <h2>9. Database Schema (Main Tables)</h2>
+      <ul>
+        <li><code>publications</code></li>
+        <li><code>faculty</code></li>
+        <li><code>publication_author_links</code></li>
+        <li><code>faculty_masterlist</code></li>
+        <li><code>acknowledgements</code></li>
+        <li><code>acknowledgement_items</code></li>
+        <li><code>users</code></li>
+        <li><code>audit_logs</code></li>
+        <li><code>tracking_log</code></li>
+      </ul>
+      <p>Highlights:</p>
+      <ul>
+        <li><code>faculty</code> uses soft deletes (<code>deleted_at</code>)</li>
+        <li><code>publication_author_links</code> stores match status (<code>pending</code>, <code>confirmed</code>, <code>rejected</code>)</li>
+        <li><code>users.username</code> is unique</li>
+        <li><code>acknowledgement_items.acknowledgement_id</code> has FK cascade to acknowledgements</li>
+      </ul>
+
+      <h2>10. Local Development Setup</h2>
+      <p><strong>Backend</strong></p>
+      <ol>
+        <li><code>cd backend</code></li>
+        <li><code>composer install</code></li>
+        <li>Configure <code>backend/.env</code></li>
+        <li><code>php spark migrate</code></li>
+        <li><code>php spark serve --host localhost --port 8080</code></li>
+      </ol>
+      <p>Current DB defaults in <code>backend/.env</code>:</p>
+      <ul>
+        <li>Host: <code>localhost</code></li>
+        <li>Database: <code>remis_db</code></li>
+        <li>User: <code>root</code></li>
+        <li>Password: empty</li>
+        <li>Port: <code>3306</code></li>
+      </ul>
+
+      <p><strong>Frontend</strong></p>
+      <ol>
+        <li><code>cd frontend</code></li>
+        <li><code>npm install</code></li>
+        <li>Optionally set <code>VITE_API_URL=http://localhost:8080/api</code></li>
+        <li><code>npm run dev</code></li>
+      </ol>
+
+      <h2>11. Current Implementation Notes</h2>
+      <ul>
+        <li><code>frontend/src/router/index.js</code> is template/default and not used by the running app. Active routes are in <code>frontend/src/main.js</code>.</li>
+        <li><code>FacultyMasterlistController</code> exists with CRUD/import/export logic, but its endpoints are not currently registered in <code>backend/app/Config/Routes.php</code>.</li>
+        <li>Some controllers set CORS headers in constructors while a CORS filter class also exists.</li>
+        <li>Dashboard yearly range is currently hardcoded to 2017-2025 in <code>DashboardController</code>.</li>
+      </ul>
+
+      <h2>12. Suggested Add-ons</h2>
+      <ul>
+        <li>Postman/Insomnia collection</li>
+        <li>ERD diagram image section in documentation</li>
+        <li>Role-permission matrix</li>
+        <li>Deployment guide</li>
+      </ul>
+
+      <h2>13. System Flowchart</h2>
+      <p>The diagram below shows the high-level process flow from user access to data operations and reporting.</p>
+      <div class="diagram-actions">
+        <button id="downloadFlowSvg" type="button">Download Flowchart SVG</button>
+        <button id="downloadFlowPng" type="button">Download Flowchart PNG</button>
+      </div>
+      <div id="flowDiagram" class="diagram-box">Rendering flowchart...</div>
+
+      <h2>14. Entity Relationship Diagram (ERD)</h2>
+      <p>The ERD below shows the database entities and core relationships used by the system.</p>
+      <div class="diagram-actions">
+        <button id="downloadErdSvg" type="button">Download ERD SVG</button>
+        <button id="downloadErdPng" type="button">Download ERD PNG</button>
+      </div>
+      <div id="erdDiagram" class="diagram-box">Rendering ERD...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+    const flowCode = `
+flowchart TD
+    A[User opens frontend app] --> B[Vue router loads route]
+    B --> C{Protected route?}
+    C -- No --> D[Open module page]
+    C -- Yes --> E[Check active session]
+    E --> F{Session valid?}
+    F -- No --> G[Redirect to login]
+    G --> H[Submit login request]
+    H --> I{Credentials valid?}
+    I -- No --> G
+    I -- Yes --> J[Session created + login audit log]
+    F -- Yes --> J
+    J --> D
+
+    D --> RA{Access role}
+    RA -- Guest or Viewer --> RV[View-only mode]
+    RA -- Editor --> RE[Edit mode]
+    RA -- Admin --> RAD[Admin mode]
+
+    RV --> K[Dashboard module]
+    RV --> L[Publications module]
+    RV --> M[Faculty module]
+    RV --> O[Acknowledgements module]
+    RV --> P[Audit Logs module]
+
+    RE --> K
+    RE --> L
+    RE --> M
+    RE --> N[Author Matches module]
+    RE --> O
+    RE --> P
+
+    RAD --> K
+    RAD --> L
+    RAD --> M
+    RAD --> N
+    RAD --> O
+    RAD --> P
+    RAD --> Q[User Management module]
+
+    K --> K1[Load dashboard summary API]
+    K --> K2[Load publications summary API]
+    K --> K3[Load faculty metrics API]
+    K --> K4[Load activity API]
+    K1 --> Z[Render charts, KPIs, and tables]
+    K2 --> Z
+    K3 --> Z
+    K4 --> Z
+
+    L --> L1[List/filter publications]
+    L --> L2[Create publication]
+    L --> L3[Update publication]
+    L --> L4[Delete publication]
+    L --> L5[Bulk import publications]
+    L2 --> L2A[Normalize authors + duplicate check]
+    L2A --> L2B[Insert publication]
+    L2B --> L2C[Write publication.create audit log]
+    L3 --> L3A[Duplicate check]
+    L3A --> L3B[Update publication]
+    L3B --> L3C[Write publication.update audit log]
+    L4 --> L4A[Delete publication]
+    L4A --> L4B[Write publication.delete audit log]
+    L5 --> L5A[Loop each row]
+    L5A --> L5B[Insert non-duplicate rows]
+    L5B --> L5C[Auto author matching]
+    L5C --> L5D[Create pending/confirmed links]
+    L5D --> L5E[Write publication.import audit log]
+
+    N --> N1[Load pending links]
+    N1 --> N2[Review pending authors]
+    N2 --> N3[Assign faculty or set status]
+    N3 --> N4[Update selected author link]
+    N4 --> Z
+
+    M --> M1[List/filter faculty]
+    M --> M2[Create faculty]
+    M --> M3[Update faculty]
+    M --> M4[Delete faculty]
+    M1 --> M1A[Join with masterlist + publication counts]
+    M1A --> Z
+    M2 --> M2A[Normalize name + check duplicate]
+    M2A --> M2B[Insert faculty]
+    M2B --> M2C[Write faculty.create audit log]
+    M3 --> M3A[Check duplicate]
+    M3A --> M3B[Update faculty]
+    M3B --> M3C[Write faculty.update audit log]
+    M4 --> M4A[Soft delete faculty]
+    M4A --> M4B[Write faculty.delete audit log]
+
+    O --> O1[List/search acknowledgement records]
+    O --> O2[Create acknowledgement + items]
+    O --> O3[Update acknowledgement + replace items]
+    O --> O4[Delete acknowledgement]
+    O1 --> Z
+    O2 --> Z
+    O3 --> Z
+    O4 --> Z
+
+    P --> P1[Load audit logs API]
+    P1 --> Z
+
+    Q --> Q0{User role admin?}
+    Q0 -- No --> QX[Forbidden 403]
+    Q0 -- Yes --> Q1[Create/list/update users]
+    Q1 --> Q2[Write user-related audit logs]
+    Q2 --> Z
+
+    L2C --> R[(MySQL database)]
+    L3C --> R
+    L4B --> R
+    L5E --> R
+    M2C --> R
+    M3C --> R
+    M4B --> R
+    O2 --> R
+    O3 --> R
+    O4 --> R
+    P1 --> R
+    Q2 --> R
+
+    Z --> S[User downloads docs/diagrams]
+`;
+
+    const erdCode = `
+erDiagram
+    USERS {
+        INT id PK
+        VARCHAR username UK
+        VARCHAR password_hash
+        ENUM role
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    FACULTY {
+        INT id PK
+        VARCHAR name
+        INT google_scholar_citations
+        INT h_index
+        INT i10_index
+        VARCHAR google_scholar_account
+        VARCHAR college_institute
+        VARCHAR email
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+    }
+
+    PUBLICATIONS {
+        INT id PK
+        INT year
+        VARCHAR college_institute
+        TEXT title
+        TEXT authors
+        VARCHAR publication_type
+        TEXT journal_book
+        VARCHAR category
+        TEXT keywords
+        VARCHAR url
+        INT citations
+        TEXT remarks
+        VARCHAR entry_by
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+    }
+
+    PUBLICATION_AUTHOR_LINKS {
+        INT id PK
+        INT publication_id FK
+        INT faculty_id FK
+        VARCHAR author_name
+        ENUM match_type
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    FACULTY_MASTERLIST {
+        INT id PK
+        VARCHAR campus
+        VARCHAR name
+        VARCHAR position
+        VARCHAR college_division
+        VARCHAR department_office_unit
+        CHAR sex
+        VARCHAR teaching_status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    ACKNOWLEDGEMENTS {
+        INT id PK
+        DATE date_issued
+        TIME time_issued
+        VARCHAR name
+        VARCHAR position
+        VARCHAR affiliation
+        VARCHAR issued_by
+        VARCHAR received_by
+        TEXT remarks
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    ACKNOWLEDGEMENT_ITEMS {
+        INT id PK
+        INT acknowledgement_id FK
+        VARCHAR volume
+        INT copies
+        VARCHAR remark
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    AUDIT_LOGS {
+        INT id PK
+        INT user_id FK
+        VARCHAR username
+        VARCHAR role
+        VARCHAR action
+        VARCHAR entity_type
+        INT entity_id
+        TEXT description
+        VARCHAR ip_address
+        TEXT user_agent
+        JSON metadata
+        DATETIME created_at
+    }
+
+    TRACKING_LOG {
+        INT id PK
+        VARCHAR action_type
+        ENUM entity_type
+        INT entity_id
+        TEXT description
+        VARCHAR status
+        VARCHAR updated_by
+        TEXT notes
+        DATETIME created_at
+    }
+
+    ACKNOWLEDGEMENTS ||--o{ ACKNOWLEDGEMENT_ITEMS : has
+    PUBLICATIONS ||--o{ PUBLICATION_AUTHOR_LINKS : contains
+    FACULTY ||--o{ PUBLICATION_AUTHOR_LINKS : matches
+    USERS ||--o{ AUDIT_LOGS : generates
+`;
+
+    mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default" });
+
+    async function renderDiagram(id, code, targetId) {
+      const target = document.getElementById(targetId);
+      try {
+        const { svg } = await mermaid.render(id, code);
+        target.innerHTML = svg;
+      } catch (error) {
+        target.textContent = "Failed to render diagram.";
+        console.error(error);
+      }
+    }
+
+    function downloadDiagramPng(containerId, fileName) {
+      const container = document.getElementById(containerId);
+      const svgEl = container.querySelector("svg");
+      if (!svgEl) {
+        alert("Diagram is not rendered yet. Please refresh and try again.");
+        return;
+      }
+
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+
+      img.onload = () => {
+        const scale = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        ctx.scale(scale, scale);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, img.width, img.height);
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const pngUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = pngUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(pngUrl);
+          } else {
+            const dataUrl = canvas.toDataURL("image/png");
+            const a = document.createElement("a");
+            a.href = dataUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+          URL.revokeObjectURL(url);
+        }, "image/png");
+      };
+
+      img.onerror = () => URL.revokeObjectURL(url);
+      img.src = url;
+    }
+
+    function downloadDiagramSvg(containerId, fileName) {
+      const container = document.getElementById(containerId);
+      const svgEl = container.querySelector("svg");
+      if (!svgEl) {
+        alert("Diagram is not rendered yet. Please refresh and try again.");
+        return;
+      }
+
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const a = document.createElement("a");
+      a.href = svgUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(svgUrl);
+    }
+
+    await renderDiagram("repo-flowchart", flowCode, "flowDiagram");
+    await renderDiagram("repo-erd-full", erdCode, "erdDiagram");
+
+    document.getElementById("downloadFlowSvg").addEventListener("click", () => {
+      downloadDiagramSvg("flowDiagram", "repo-flowchart.svg");
+    });
+
+    document.getElementById("downloadFlowPng").addEventListener("click", () => {
+      downloadDiagramPng("flowDiagram", "repo-flowchart.png");
+    });
+
+    document.getElementById("downloadErdSvg").addEventListener("click", () => {
+      downloadDiagramSvg("erdDiagram", "repo-erd.svg");
+    });
+
+    document.getElementById("downloadErdPng").addEventListener("click", () => {
+      downloadDiagramPng("erdDiagram", "repo-erd.png");
+    });
+
+    document.getElementById("printDoc").addEventListener("click", () => {
+      window.print();
+    });
+
+    document.getElementById("downloadDoc").addEventListener("click", () => {
+      const content = document.getElementById("docContent").innerHTML;
+      const html = `
+<html>
+<head>
+<meta charset="utf-8" />
+<title>REPO Research Monitoring System Documentation</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.4; margin: 1in; }
+  h1, h2 { color: #111827; }
+  h2 { margin-top: 18px; }
+  code { font-family: Consolas, monospace; font-size: 10pt; }
+</style>
+</head>
+<body>
+<h1>REPO Research Monitoring System Documentation</h1>
+${content}
+</body>
+</html>`;
+
+      const blob = new Blob([html], { type: "application/msword" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "REPO_Documentation.doc";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>

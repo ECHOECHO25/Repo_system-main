@@ -37,7 +37,7 @@
         {{ error }}
       </div>
       <div v-else>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overflow-y-visible">
           <table class="w-full text-left text-sm text-slate-200">
             <thead class="bg-slate-900/90 text-xs uppercase tracking-[0.22em] text-slate-400">
               <tr>
@@ -62,11 +62,19 @@
                 </td>
                 <td class="px-4 py-4">{{ match.publication_year || '-' }}</td>
                 <td class="px-4 py-4">
-                  <SearchableSelect
+                  <select
                     v-model="selectedFaculty[match.id]"
-                    :options="facultyOptions"
-                    placeholder="Select faculty"
-                  />
+                    class="w-full min-w-[220px] rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 focus:border-emerald-400 focus:outline-none"
+                  >
+                    <option value="">Select faculty</option>
+                    <option
+                      v-for="option in facultyOptionsByAuthor(match.author_name)"
+                      :key="`${match.id}-${option.id}`"
+                      :value="String(option.id)"
+                    >
+                      {{ option.name }}
+                    </option>
+                  </select>
                   <p v-if="rowErrors[match.id]" class="mt-2 text-xs text-rose-300">
                     {{ rowErrors[match.id] }}
                   </p>
@@ -135,103 +143,6 @@
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 
-const SearchableSelect = {
-  props: {
-    modelValue: {
-      type: [String, Number],
-      default: ''
-    },
-    options: {
-      type: Array,
-      default: () => []
-    },
-    placeholder: {
-      type: String,
-      default: 'Select option'
-    }
-  },
-  emits: ['update:modelValue'],
-  data() {
-    return {
-      open: false,
-      query: ''
-    }
-  },
-  computed: {
-    selectedLabel() {
-      const match = this.options.find((option) => option.id === this.modelValue)
-      return match?.name || match?.full_name || match?.label || ''
-    },
-    displayValue() {
-      if (this.open) return this.query
-      return this.selectedLabel || ''
-    },
-    filteredOptions() {
-      const q = this.query.trim().toLowerCase()
-      if (!q) return this.options
-      return this.options.filter((option) => {
-        const label = (option?.name || option?.full_name || option?.label || '').toString().toLowerCase()
-        return label.includes(q)
-      })
-    }
-  },
-  methods: {
-    onFocus() {
-      this.open = true
-      this.query = ''
-    },
-    onInput(event) {
-      this.query = event.target.value
-      this.open = true
-    },
-    onBlur() {
-      setTimeout(() => {
-        this.open = false
-        this.query = ''
-      }, 120)
-    },
-    selectOption(option) {
-      this.$emit('update:modelValue', option.id)
-      this.open = false
-      this.query = ''
-    }
-  },
-  template: `
-    <div class="relative">
-      <input
-        type="text"
-        :placeholder="placeholder"
-        :value="displayValue"
-        class="w-full min-w-[180px] rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none"
-        @focus="onFocus"
-        @input="onInput"
-        @blur="onBlur"
-      />
-      <div
-        v-if="open"
-        class="absolute z-20 mt-2 w-full max-h-48 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/95 p-1 text-xs text-slate-100 shadow-lg"
-      >
-        <button
-          v-if="!filteredOptions.length"
-          type="button"
-          class="w-full cursor-default rounded-xl px-3 py-2 text-left text-slate-500"
-        >
-          No matches
-        </button>
-        <button
-          v-for="option in filteredOptions"
-          :key="option.id"
-          type="button"
-          class="w-full rounded-xl px-3 py-2 text-left hover:bg-slate-800/60"
-          @mousedown.prevent="selectOption(option)"
-        >
-          {{ option.name || option.full_name || option.label }}
-        </button>
-      </div>
-    </div>
-  `
-}
-
 const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 const loading = ref(false)
@@ -250,6 +161,48 @@ const selectedFaculty = ref({})
 const rowErrors = ref({})
 const actionLoading = ref({})
 
+const normalizePerson = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const facultyOptionsByAuthor = (authorName) => {
+  if (!facultyOptions.value.length) return []
+
+  const author = normalizePerson(authorName)
+  if (!author) {
+    return facultyOptions.value.slice(0, 150)
+  }
+
+  const matched = facultyOptions.value.filter((option) => {
+    const name = normalizePerson(option.name)
+    return name.includes(author) || author.includes(name)
+  })
+
+  if (matched.length) return matched.slice(0, 150)
+  return facultyOptions.value.slice(0, 150)
+}
+
+const autoSelectExactMatches = () => {
+  if (!matches.value.length || !facultyOptions.value.length) return
+
+  const next = { ...selectedFaculty.value }
+  for (const match of matches.value) {
+    if (next[match.id]) continue
+    const author = normalizePerson(match.author_name)
+    if (!author) continue
+    const exact = facultyOptions.value.find(
+      (option) => normalizePerson(option.name) === author
+    )
+    if (exact) {
+      next[match.id] = String(exact.id)
+    }
+  }
+  selectedFaculty.value = next
+}
+
 const fetchMatches = async () => {
   loading.value = true
   error.value = ''
@@ -266,6 +219,7 @@ const fetchMatches = async () => {
     if (response.data.pagination) {
       pagination.value = response.data.pagination
     }
+    autoSelectExactMatches()
   } catch (err) {
     error.value = err?.response?.data?.message || 'Failed to load pending matches.'
   } finally {
@@ -275,10 +229,28 @@ const fetchMatches = async () => {
 
 const fetchFacultyOptions = async () => {
   try {
-    const response = await axios.get(`${apiBase}/faculty`, {
-      params: { per_page: 500, sort: 'name', order: 'asc' }
-    })
-    facultyOptions.value = response.data.data || []
+    const perPage = 500
+    let page = 1
+    let totalPages = 1
+    const all = []
+
+    do {
+      const response = await axios.get(`${apiBase}/faculty`, {
+        params: { page, per_page: perPage, sort: 'name', order: 'asc' }
+      })
+      const rows = response.data?.data || []
+      all.push(...rows)
+      totalPages = Number(response.data?.pagination?.total_pages || 1)
+      page += 1
+    } while (page <= totalPages)
+
+    facultyOptions.value = all
+      .filter((row) => row && row.id && row.name)
+      .map((row) => ({
+        id: Number(row.id),
+        name: row.name
+      }))
+    autoSelectExactMatches()
   } catch (err) {
     facultyOptions.value = []
   }

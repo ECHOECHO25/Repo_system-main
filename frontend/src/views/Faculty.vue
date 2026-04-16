@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div>
       <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Faculty</p>
-      <h1 class="text-3xl font-semibold">Faculty Metrics</h1>
+      <h1 class="text-3xl font-semibold">Faculty and Staff</h1>
       <p class="mt-2 text-sm text-slate-400">
         Search a faculty member to view Google Scholar citations and indices.
       </p>
@@ -1352,4 +1352,3 @@ const recordAudit = async (action, metadata) => {
   }
 }
 </script>
-
