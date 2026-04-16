@@ -38,6 +38,7 @@ class AcknowledgementsController extends ResourceController
                 $builder->groupStart()
                     ->like('name', $search)
                     ->orLike('position', $search)
+                    ->orLike('bsu_scope', $search)
                     ->orLike('affiliation', $search)
                     ->orLike('issued_by', $search)
                     ->orLike('received_by', $search)
@@ -176,4 +177,4 @@ class AcknowledgementsController extends ResourceController
             $itemModel->insert($payload);
         }
     }
-}
+}   

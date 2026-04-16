@@ -29,6 +29,25 @@
     <p v-if="pageMessage" class="mt-4 text-xs text-emerald-300">{{ pageMessage }}</p>
     <p v-if="pageError" class="mt-4 text-xs text-rose-300">{{ pageError }}</p>
 
+    <div
+      v-if="volumeDistributionTotals.length"
+      class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-4"
+    >
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Volume Distribution Counter</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <div
+          v-for="item in volumeDistributionTotals"
+          :key="item.volume"
+          class="rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs text-slate-200"
+        >
+          <div class="font-semibold text-emerald-300">Volume {{ item.volume }}</div>
+          <div class="mt-1 text-slate-300">Inside BSU: <span class="font-semibold">{{ item.inside }}</span></div>
+          <div class="text-slate-300">Outside BSU: <span class="font-semibold">{{ item.outside }}</span></div>
+          <div class="text-slate-300">Others: <span class="font-semibold">{{ item.others }}</span></div>
+        </div>
+      </div>
+    </div>
+
     <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
       <div v-if="loading" class="px-4 py-6 text-sm text-slate-300">Loading acknowledgement records...</div>
       <div v-else-if="error" class="px-4 py-6 text-sm text-rose-300">{{ error }}</div>
@@ -43,6 +62,7 @@
               <th class="px-4 py-3 font-semibold">Date</th>
               <th class="px-4 py-3 font-semibold">Time</th>
               <th class="px-4 py-3 font-semibold">Name</th>
+              <th class="px-4 py-3 font-semibold">BSU Scope</th>
               <th class="px-4 py-3 font-semibold">Position</th>
               <th class="px-4 py-3 font-semibold">Affiliation/Agency</th>
               <th class="px-4 py-3 font-semibold">Volume</th>
@@ -56,6 +76,14 @@
               <td class="px-4 py-3">{{ formatDate(row.date_issued) }}</td>
               <td class="px-4 py-3">{{ formatTime(row.time_issued) }}</td>
               <td class="px-4 py-3">{{ row.name || '-' }}</td>
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  :class="scopeBadgeClass(row.bsu_scope)"
+                >
+                  {{ row.bsu_scope || 'Unspecified' }}
+                </span>
+              </td>
               <td class="px-4 py-3">{{ row.position || '-' }}</td>
               <td class="px-4 py-3">{{ row.affiliation || '-' }}</td>
               <td class="px-4 py-3">{{ row.itemsLabel || '-' }}</td>
@@ -271,6 +299,20 @@
           </label>
 
           <label class="text-sm">
+            <span class="mb-1 block text-xs uppercase tracking-[0.18em] text-slate-400">BSU Scope *</span>
+            <select
+              v-model="form.bsu_scope"
+              required
+              class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+            >
+              <option value="" disabled class="bg-slate-900 text-slate-100">Select scope</option>
+              <option value="Inside BSU" class="bg-slate-900 text-slate-100">Inside BSU</option>
+              <option value="Outside BSU" class="bg-slate-900 text-slate-100">Outside BSU</option>
+              <option value="Others" class="bg-slate-900 text-slate-100">Others</option>
+            </select>
+          </label>
+
+          <label class="text-sm">
             <span class="mb-1 block text-xs uppercase tracking-[0.18em] text-slate-400">Affiliation/Agency *</span>
             <input
               v-model.trim="form.affiliation"
@@ -292,38 +334,40 @@
               </button>
             </div>
 
-            <div
-              v-for="(item, index) in form.items"
-              :key="`form-item-${index}`"
-              class="mb-2 grid items-center gap-2 md:grid-cols-[minmax(0,1fr)_96px_minmax(0,1fr)_84px]"
-            >
-              <input
-                v-model.trim="item.volume"
-                type="text"
-                placeholder="Volume"
-                required
-                class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              />
-              <input
-                v-model.number="item.copies"
-                type="number"
-                min="1"
-                required
-                class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              />
-              <input
-                v-model.trim="item.remark"
-                type="text"
-                placeholder="Remark (optional)"
-                class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              />
-              <button
-                type="button"
-                class="w-full rounded border border-rose-500/60 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-300 hover:border-rose-400"
-                @click="removeFormItem(index)"
+            <div class="max-h-64 overflow-y-auto pr-1">
+              <div
+                v-for="(item, index) in form.items"
+                :key="`form-item-${index}`"
+                class="mb-2 grid items-center gap-2 md:grid-cols-[minmax(0,1fr)_96px_minmax(0,1fr)_84px]"
               >
-                Remove
-              </button>
+                <input
+                  v-model.trim="item.volume"
+                  type="text"
+                  placeholder="Volume"
+                  required
+                  class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+                />
+                <input
+                  v-model.number="item.copies"
+                  type="number"
+                  min="1"
+                  required
+                  class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+                />
+                <input
+                  v-model.trim="item.remark"
+                  type="text"
+                  placeholder="Remark (optional)"
+                  class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  class="w-full rounded border border-rose-500/60 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-300 hover:border-rose-400"
+                  @click="removeFormItem(index)"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
 
@@ -422,6 +466,20 @@
           </label>
 
           <label class="text-sm">
+            <span class="mb-1 block text-xs uppercase tracking-[0.16em] text-slate-400">BSU Scope *</span>
+            <select
+              v-model="editForm.bsu_scope"
+              required
+              class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+            >
+              <option value="" disabled class="bg-slate-900 text-slate-100">Select scope</option>
+              <option value="Inside BSU" class="bg-slate-900 text-slate-100">Inside BSU</option>
+              <option value="Outside BSU" class="bg-slate-900 text-slate-100">Outside BSU</option>
+              <option value="Others" class="bg-slate-900 text-slate-100">Others</option>
+            </select>
+          </label>
+
+          <label class="text-sm">
             <span class="mb-1 block text-xs uppercase tracking-[0.16em] text-slate-400">Affiliation/Agency</span>
             <input
               v-model.trim="editForm.affiliation"
@@ -442,38 +500,40 @@
               </button>
             </div>
 
-            <div
-              v-for="(item, index) in editForm.items"
-              :key="`item-${index}`"
-              class="mb-2 grid items-center gap-2 md:grid-cols-[minmax(0,1fr)_96px_minmax(0,1fr)_84px]"
-            >
-              <input
-                v-model.trim="item.volume"
-                type="text"
-                placeholder="Volume"
-                required
-                class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              />
-              <input
-                v-model.number="item.copies"
-                type="number"
-                min="1"
-                required
-                class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              />
-              <input
-                v-model.trim="item.remark"
-                type="text"
-                placeholder="Remark (optional)"
-                class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
-              />
-              <button
-                type="button"
-                class="w-full rounded border border-rose-500/60 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-300 hover:border-rose-400"
-                @click="removeEditItem(index)"
+            <div class="max-h-64 overflow-y-auto pr-1">
+              <div
+                v-for="(item, index) in editForm.items"
+                :key="`item-${index}`"
+                class="mb-2 grid items-center gap-2 md:grid-cols-[minmax(0,1fr)_96px_minmax(0,1fr)_84px]"
               >
-                Remove
-              </button>
+                <input
+                  v-model.trim="item.volume"
+                  type="text"
+                  placeholder="Volume"
+                  required
+                  class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+                />
+                <input
+                  v-model.number="item.copies"
+                  type="number"
+                  min="1"
+                  required
+                  class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+                />
+                <input
+                  v-model.trim="item.remark"
+                  type="text"
+                  placeholder="Remark (optional)"
+                  class="min-w-0 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  class="w-full rounded border border-rose-500/60 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-300 hover:border-rose-400"
+                  @click="removeEditItem(index)"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
 
@@ -519,6 +579,52 @@
     </div>
   </transition>
 
+  <transition name="fade">
+    <div
+      v-if="showDeleteModal && isAuthenticated"
+      class="fixed inset-0 z-[80] bg-slate-950/80"
+      @click="closeDeleteModal"
+    ></div>
+  </transition>
+
+  <transition name="modal">
+    <div v-if="showDeleteModal && isAuthenticated" class="fixed inset-0 z-[90] grid place-items-center p-4">
+      <div class="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl" @click.stop>
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-3xl font-medium text-slate-100">Delete acknowledgement</h3>
+            <p class="mt-2 text-lg text-slate-300">Delete this record? This cannot be undone.</p>
+          </div>
+          <button
+            type="button"
+            class="text-2xl leading-none text-slate-400 transition hover:text-slate-200"
+            @click="closeDeleteModal"
+          >
+            x
+          </button>
+        </div>
+
+        <div class="mt-8 flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-xl border border-slate-700 px-6 py-3 text-lg text-slate-100 transition hover:border-slate-500"
+            @click="closeDeleteModal"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            :disabled="deleting"
+            class="rounded-xl bg-rose-400/20 px-6 py-3 text-lg font-medium text-rose-100 transition hover:bg-rose-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+            @click="confirmDeleteRecord"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
 </template>
 
 <script setup>
@@ -538,12 +644,16 @@ const searchQuery = ref('')
 const showModal = ref(false)
 const journalTitleInput = ref(null)
 const showAddVolumeModal = ref(false)
+const showDeleteModal = ref(false)
+const deleteTarget = ref(null)
+const deleting = ref(false)
 const editForm = ref({
   id: null,
   date_issued: '',
   time_issued: '',
   name: '',
   position: '',
+  bsu_scope: '',
   affiliation: '',
   issued_by: '',
   received_by: '',
@@ -557,6 +667,7 @@ const form = ref({
   time_issued: '',
   name: '',
   position: '',
+  bsu_scope: '',
   affiliation: '',
   issued_by: '',
   received_by: '',
@@ -598,7 +709,6 @@ const groupedRows = computed(() =>
       .map((item) => String(item.remark ?? '').trim())
       .filter(Boolean)
       .join(' | ')
-
     return {
       ...row,
       groupKey: row.id || `${row.date_issued}-${row.time_issued}-${row.name}`,
@@ -635,6 +745,46 @@ const filteredRows = computed(() => {
   })
 })
 
+const volumeDistributionTotals = computed(() => {
+  const totals = new Map()
+
+  groupedRows.value.forEach((row) => {
+    const items = Array.isArray(row.itemRows) ? row.itemRows : []
+    const scope = String(row.bsu_scope ?? '').trim()
+    items.forEach((item) => {
+      const volume = String(item.volume ?? '').trim()
+      if (!volume) return
+
+      const copies = Number(item.copies ?? 0)
+      const amount = Number.isFinite(copies) ? copies : 0
+      const current = totals.get(volume) ?? {
+        inside: 0,
+        outside: 0,
+        others: 0
+      }
+
+      if (scope === 'Inside BSU') {
+        current.inside += amount
+      } else if (scope === 'Outside BSU') {
+        current.outside += amount
+      } else if (scope === 'Others') {
+        current.others += amount
+      }
+
+      totals.set(volume, current)
+    })
+  })
+
+  return [...totals.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+    .map(([volume, counts]) => ({
+      volume,
+      inside: counts.inside,
+      outside: counts.outside,
+      others: counts.others
+    }))
+})
+
 const formatDate = (value) => {
   if (!value) return '-'
   const date = new Date(value)
@@ -647,6 +797,19 @@ const formatTime = (value) => {
   const date = new Date(`1970-01-01T${value}`)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const scopeBadgeClass = (scope) => {
+  if (scope === 'Inside BSU') {
+    return 'border-emerald-500/60 bg-emerald-500/10 text-emerald-200'
+  }
+  if (scope === 'Outside BSU') {
+    return 'border-sky-500/60 bg-sky-500/10 text-sky-200'
+  }
+  if (scope === 'Others') {
+    return 'border-amber-500/60 bg-amber-500/10 text-amber-200'
+  }
+  return 'border-slate-600 bg-slate-800/70 text-slate-300'
 }
 
 const escapeHtml = (value) =>
@@ -825,7 +988,7 @@ const printRecord = (row) => {
             <table>
               <tr><th style="width: 20%;">Date</th><td style="width: 31%;">${escapeHtml(formatDate(row.date_issued) === '-' ? '' : formatDate(row.date_issued))}</td><th style="width: 18%;">Time</th><td>${escapeHtml(formatTime(row.time_issued) === '-' ? '' : formatTime(row.time_issued))}</td></tr>
               <tr><th>Name</th><td colspan="3">${escapeHtml(row.name || '')}</td></tr>
-              <tr><th>Position</th><td colspan="3">${escapeHtml(row.position || '')}</td></tr>
+              <tr><th>Position</th><td colspan="3">${escapeHtml(row.positionLabel || row.position || '')}</td></tr>
               <tr><th>Affiliation/Agency</th><td colspan="3">${escapeHtml(row.affiliation || '')}</td></tr>
             </table>
           </div>
@@ -880,19 +1043,33 @@ const printRecord = (row) => {
   popup.onload = () => popup.print()
 }
 
-const deleteRecord = async (row) => {
+const deleteRecord = (row) => {
   if (!isAuthenticated.value) return
-  const confirmed = window.confirm('Delete this record? This action cannot be undone.')
-  if (!confirmed) return
+  deleteTarget.value = row
+  showDeleteModal.value = true
+}
 
+const closeDeleteModal = () => {
+  if (deleting.value) return
+  showDeleteModal.value = false
+  deleteTarget.value = null
+}
+
+const confirmDeleteRecord = async () => {
+  if (!isAuthenticated.value || !deleteTarget.value?.id) return
+  deleting.value = true
   try {
-    await axios.delete(`${apiBase}/acknowledgements/${row.id}`)
+    await axios.delete(`${apiBase}/acknowledgements/${deleteTarget.value.id}`)
     pageMessage.value = 'Record deleted successfully.'
     pageError.value = ''
+    showDeleteModal.value = false
+    deleteTarget.value = null
     await fetchRows()
   } catch (err) {
     pageError.value = err?.response?.data?.message || 'Failed to delete record.'
     pageMessage.value = ''
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -1020,6 +1197,7 @@ const resetForm = () => {
     time_issued: '',
     name: '',
     position: '',
+    bsu_scope: '',
     affiliation: '',
     issued_by: '',
     received_by: '',
@@ -1057,6 +1235,11 @@ const createRow = async () => {
       return
     }
 
+    if (!form.value.bsu_scope) {
+      submitError.value = 'BSU Scope is required.'
+      return
+    }
+
     if (!form.value.items.length) {
       submitError.value = 'Please add at least one item.'
       return
@@ -1080,6 +1263,7 @@ const createRow = async () => {
       time_issued: form.value.time_issued || null,
       name: form.value.name,
       position: form.value.position,
+      bsu_scope: form.value.bsu_scope || null,
       affiliation: form.value.affiliation,
       issued_by: form.value.issued_by || null,
       received_by: form.value.received_by || null,
@@ -1115,6 +1299,7 @@ const openAddVolumeModal = (row) => {
     time_issued: row.time_issued || '',
     name: row.name || '',
     position: row.position || '',
+    bsu_scope: row.bsu_scope || '',
     affiliation: row.affiliation || '',
     issued_by: row.issued_by || '',
     received_by: row.received_by || '',
@@ -1166,10 +1351,15 @@ const submitEditRecord = async () => {
     return
   }
 
-    if (!editForm.value.date_issued) {
+  if (!editForm.value.date_issued) {
       submitError.value = 'Date is required.'
       return
     }
+
+  if (!editForm.value.bsu_scope) {
+    submitError.value = 'BSU Scope is required.'
+    return
+  }
 
   for (let i = 0; i < editForm.value.items.length; i++) {
     const item = editForm.value.items[i]
@@ -1188,6 +1378,7 @@ const submitEditRecord = async () => {
     time_issued: editForm.value.time_issued || null,
     name: editForm.value.name || null,
     position: editForm.value.position || null,
+    bsu_scope: editForm.value.bsu_scope || null,
     affiliation: editForm.value.affiliation || null,
     issued_by: editForm.value.issued_by || null,
     received_by: editForm.value.received_by || null,
@@ -1216,6 +1407,8 @@ const closeModal = () => {
   showModal.value = false
   pickerOpen.value = false
   showAddVolumeModal.value = false
+  showDeleteModal.value = false
+  deleteTarget.value = null
   submitError.value = ''
   submitMessage.value = ''
 }
@@ -1233,6 +1426,10 @@ const handleEscKey = (event) => {
   if (event.key !== 'Escape') return
   if (showAddVolumeModal.value) {
     closeAddVolumeModal()
+    return
+  }
+  if (showDeleteModal.value) {
+    closeDeleteModal()
     return
   }
   if (pickerOpen.value) {

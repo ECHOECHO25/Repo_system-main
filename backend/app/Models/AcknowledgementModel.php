@@ -15,6 +15,7 @@ class AcknowledgementModel extends Model
         'time_issued',
         'name',
         'position',
+        'bsu_scope',
         'affiliation',
         'issued_by',
         'received_by',

@@ -201,12 +201,6 @@
                         View
                       </button>
                       <button
-                        class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300"
-                        @click="toggleMatchPanel(pub)"
-                      >
-                        Match Authors
-                      </button>
-                      <button
                         class="rounded-full border border-yellow-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-yellow-200 hover:border-yellow-400"
                         @click="confirmEdit(pub)"
                       >
@@ -366,12 +360,6 @@
                   @click="viewPublication(pub)"
                 >
                   View
-                </button>
-                <button
-                  class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300"
-                  @click="toggleMatchPanel(pub)"
-                >
-                  Match Authors
                 </button>
                 <button
                   class="rounded-full border border-yellow-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-yellow-200 hover:border-yellow-400"

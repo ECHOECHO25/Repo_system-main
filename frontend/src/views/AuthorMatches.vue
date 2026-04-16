@@ -62,32 +62,22 @@
                 </td>
                 <td class="px-4 py-4">{{ match.publication_year || '-' }}</td>
                 <td class="px-4 py-4">
-                  <select
-                    v-model="selectedFaculty[match.id]"
-                    class="w-full min-w-[220px] rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 focus:border-emerald-400 focus:outline-none"
-                  >
-                    <option value="">Select faculty</option>
-                    <option
-                      v-for="option in facultyOptionsByAuthor(match.author_name)"
-                      :key="`${match.id}-${option.id}`"
-                      :value="String(option.id)"
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="rounded-full border border-emerald-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300"
+                      @click="openMatchModal(match)"
                     >
-                      {{ option.name }}
-                    </option>
-                  </select>
-                  <p v-if="rowErrors[match.id]" class="mt-2 text-xs text-rose-300">
-                    {{ rowErrors[match.id] }}
-                  </p>
+                      Match
+                    </button>
+                    <span
+                      class="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-amber-200"
+                    >
+                      Unmatched
+                    </span>
+                  </div>
                 </td>
                 <td class="px-4 py-4 text-right">
-                  <button
-                    type="button"
-                    class="rounded-full border border-emerald-400/40 px-3 py-1 text-xs uppercase tracking-[0.3em] text-emerald-200 hover:border-emerald-300"
-                    :disabled="actionLoading[match.id]"
-                    @click="confirmMatch(match.id)"
-                  >
-                    Confirm
-                  </button>
                   <button
                     type="button"
                     class="ml-2 rounded-full border border-rose-500/40 px-3 py-1 text-xs uppercase tracking-[0.3em] text-rose-200 hover:border-rose-400"
@@ -136,6 +126,114 @@
         </div>
       </div>
     </div>
+
+    <div
+      v-if="showMatchModal && activeMatch"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+    >
+      <div class="w-full max-w-3xl rounded-3xl border border-slate-800 bg-slate-950 p-6">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Author Matches</p>
+            <p class="mt-2 text-sm font-semibold text-slate-100">{{ activeMatch.author_name }}</p>
+            <p class="mt-1 text-xs text-slate-400">{{ activeMatch.publication_title || 'Untitled' }}</p>
+          </div>
+          <button
+            type="button"
+            class="text-xs uppercase tracking-[0.22em] text-slate-400 hover:text-slate-200"
+            @click="closeMatchModal"
+          >
+            Close
+          </button>
+        </div>
+
+        <div v-if="activeState" class="mt-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+          <label class="block text-[10px] uppercase tracking-[0.2em] text-slate-500">Search Faculty</label>
+          <div class="relative mt-2">
+            <input
+              v-model="activeState.query"
+              type="text"
+              class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+              @input="onFacultyQuery(activeMatch)"
+              @focus="openFacultyOptions(activeMatch.id)"
+              @blur="closeFacultyOptions(activeMatch.id)"
+            />
+            <div
+              v-if="activeState.optionsOpen && activeState.options.length"
+              class="absolute z-20 mt-2 w-full max-h-56 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-2 text-sm shadow-2xl"
+            >
+              <button
+                v-for="option in activeState.options"
+                :key="`modal-${activeMatch.id}-${option.id}`"
+                type="button"
+                class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
+                @mousedown.prevent="selectFaculty(activeMatch.id, option)"
+              >
+                {{ option.name }}
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-2 md:grid-cols-2">
+            <div>
+              <label class="block text-[10px] uppercase tracking-[0.2em] text-slate-500">Non-Faculty Author Name</label>
+              <input
+                v-model="activeState.nonFacultyName"
+                type="text"
+                class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase tracking-[0.2em] text-slate-500">Author Type</label>
+              <select
+                v-model="activeState.nonFacultyType"
+                class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+              >
+                <option v-for="type in nonFacultyTypes" :key="type.value" :value="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded-full border border-emerald-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-emerald-200 hover:border-emerald-300 disabled:opacity-50"
+              :disabled="actionLoading[activeMatch.id] || !activeState.facultyId"
+              @click="confirmMatch(activeMatch)"
+            >
+              Assign
+            </button>
+            <button
+              type="button"
+              class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500 disabled:opacity-50"
+              :disabled="actionLoading[activeMatch.id]"
+              @click="addFacultyFromAuthor(activeMatch)"
+            >
+              Add Faculty
+            </button>
+            <button
+              type="button"
+              class="rounded-full border border-cyan-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-cyan-200 hover:border-cyan-300 disabled:opacity-50"
+              :disabled="actionLoading[activeMatch.id]"
+              @click="addNonFacultyAuthor(activeMatch)"
+            >
+              Add Non-Faculty
+            </button>
+            <button
+              type="button"
+              class="rounded-full border border-rose-500/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-rose-200 hover:border-rose-400 disabled:opacity-50"
+              :disabled="actionLoading[activeMatch.id]"
+              @click="rejectMatch(activeMatch.id)"
+            >
+              Reject
+            </button>
+          </div>
+          <p v-if="activeState.error" class="mt-3 text-xs text-rose-300">{{ activeState.error }}</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -157,9 +255,22 @@ const pagination = ref({
 })
 
 const facultyOptions = ref([])
-const selectedFaculty = ref({})
-const rowErrors = ref({})
+const rowStates = ref({})
 const actionLoading = ref({})
+const showMatchModal = ref(false)
+const activeMatchId = ref(null)
+const nonFacultyTypes = [
+  { value: 'internal', label: 'Internal' },
+  { value: 'external', label: 'External' },
+  { value: 'international', label: 'International' }
+]
+
+const activeMatch = computed(() =>
+  matches.value.find((item) => item.id === activeMatchId.value) || null
+)
+const activeState = computed(() =>
+  activeMatchId.value ? rowStates.value[activeMatchId.value] || null : null
+)
 
 const normalizePerson = (value) =>
   String(value || '')
@@ -168,39 +279,43 @@ const normalizePerson = (value) =>
     .replace(/\s+/g, ' ')
     .trim()
 
-const facultyOptionsByAuthor = (authorName) => {
-  if (!facultyOptions.value.length) return []
+const findFacultyOptions = (query, authorName) => {
+  const normalizedQuery = normalizePerson(query)
+  const fallbackAuthor = normalizePerson(authorName)
+  const needle = normalizedQuery || fallbackAuthor
 
-  const author = normalizePerson(authorName)
-  if (!author) {
-    return facultyOptions.value.slice(0, 150)
-  }
-
-  const matched = facultyOptions.value.filter((option) => {
-    const name = normalizePerson(option.name)
-    return name.includes(author) || author.includes(name)
-  })
-
-  if (matched.length) return matched.slice(0, 150)
-  return facultyOptions.value.slice(0, 150)
+  if (!needle) return facultyOptions.value.slice(0, 20)
+  const matched = facultyOptions.value.filter((option) =>
+    normalizePerson(option.name).includes(needle)
+  )
+  return (matched.length ? matched : facultyOptions.value).slice(0, 20)
 }
 
-const autoSelectExactMatches = () => {
-  if (!matches.value.length || !facultyOptions.value.length) return
+const buildRowState = (match, existing = null) => {
+  const current = existing || {}
+  const prefilled = current.query || match.author_name || ''
+  const exact = facultyOptions.value.find(
+    (option) => normalizePerson(option.name) === normalizePerson(match.author_name)
+  )
 
-  const next = { ...selectedFaculty.value }
-  for (const match of matches.value) {
-    if (next[match.id]) continue
-    const author = normalizePerson(match.author_name)
-    if (!author) continue
-    const exact = facultyOptions.value.find(
-      (option) => normalizePerson(option.name) === author
-    )
-    if (exact) {
-      next[match.id] = String(exact.id)
-    }
+  return {
+    query: prefilled,
+    facultyId: current.facultyId || (exact ? String(exact.id) : ''),
+    facultyName: current.facultyName || (exact ? exact.name : ''),
+    nonFacultyName: current.nonFacultyName || match.author_name || '',
+    nonFacultyType: current.nonFacultyType || 'external',
+    optionsOpen: false,
+    options: findFacultyOptions(prefilled, match.author_name),
+    error: ''
   }
-  selectedFaculty.value = next
+}
+
+const syncRowStates = () => {
+  const next = {}
+  for (const match of matches.value) {
+    next[match.id] = buildRowState(match, rowStates.value[match.id])
+  }
+  rowStates.value = next
 }
 
 const fetchMatches = async () => {
@@ -219,7 +334,7 @@ const fetchMatches = async () => {
     if (response.data.pagination) {
       pagination.value = response.data.pagination
     }
-    autoSelectExactMatches()
+    syncRowStates()
   } catch (err) {
     error.value = err?.response?.data?.message || 'Failed to load pending matches.'
   } finally {
@@ -250,17 +365,53 @@ const fetchFacultyOptions = async () => {
         id: Number(row.id),
         name: row.name
       }))
-    autoSelectExactMatches()
+    syncRowStates()
   } catch (err) {
     facultyOptions.value = []
+    rowStates.value = {}
   }
 }
 
-const confirmMatch = async (id) => {
-  rowErrors.value[id] = ''
-  const facultyId = selectedFaculty.value[id]
+const openFacultyOptions = (id) => {
+  if (!rowStates.value[id]) return
+  rowStates.value[id].optionsOpen = true
+}
+
+const closeFacultyOptions = (id) => {
+  if (!rowStates.value[id]) return
+  setTimeout(() => {
+    if (rowStates.value[id]) rowStates.value[id].optionsOpen = false
+  }, 120)
+}
+
+const onFacultyQuery = (match) => {
+  const state = rowStates.value[match.id]
+  if (!state) return
+  state.options = findFacultyOptions(state.query, match.author_name)
+  state.optionsOpen = true
+  state.facultyId = ''
+  state.facultyName = ''
+  state.error = ''
+}
+
+const selectFaculty = (id, option) => {
+  const state = rowStates.value[id]
+  if (!state) return
+  state.query = option.name
+  state.facultyId = String(option.id)
+  state.facultyName = option.name
+  state.optionsOpen = false
+  state.error = ''
+}
+
+const confirmMatch = async (match) => {
+  const id = match.id
+  const state = rowStates.value[id]
+  if (!state) return
+  state.error = ''
+  const facultyId = state.facultyId
   if (!facultyId) {
-    rowErrors.value[id] = 'Select a faculty to confirm.'
+    state.error = 'Select a faculty to confirm.'
     return
   }
   actionLoading.value[id] = true
@@ -270,23 +421,102 @@ const confirmMatch = async (id) => {
       faculty_id: facultyId
     })
     await fetchMatches()
+    if (activeMatchId.value === id) {
+      closeMatchModal()
+    }
   } catch (err) {
-    rowErrors.value[id] = err?.response?.data?.message || 'Failed to confirm match.'
+    state.error = err?.response?.data?.message || 'Failed to confirm match.'
+  } finally {
+    actionLoading.value[id] = false
+  }
+}
+
+const addFacultyFromAuthor = async (match) => {
+  const id = match.id
+  const state = rowStates.value[id]
+  if (!state) return
+  state.error = ''
+  actionLoading.value[id] = true
+  try {
+    const response = await axios.post(`${apiBase}/faculty`, {
+      name: match.author_name,
+      status: 'active'
+    })
+    const facultyId = response?.data?.data?.id
+    const facultyName = response?.data?.data?.name || match.author_name
+    if (!facultyId) {
+      state.error = 'Faculty created but no ID returned.'
+      return
+    }
+    state.facultyId = String(facultyId)
+    state.facultyName = facultyName
+    state.query = facultyName
+    await axios.put(`${apiBase}/publication-author-links/${id}`, {
+      status: 'confirmed',
+      faculty_id: facultyId
+    })
+    await fetchFacultyOptions()
+    await fetchMatches()
+    if (activeMatchId.value === id) {
+      closeMatchModal()
+    }
+  } catch (err) {
+    state.error = err?.response?.data?.message || 'Failed to add faculty.'
+  } finally {
+    actionLoading.value[id] = false
+  }
+}
+
+const addNonFacultyAuthor = async (match) => {
+  const id = match.id
+  const state = rowStates.value[id]
+  if (!state) return
+  state.error = ''
+  const name = String(state.nonFacultyName || '').trim()
+  if (!name) {
+    state.error = 'Non-faculty author name is required.'
+    return
+  }
+  if (!['internal', 'external', 'international'].includes(state.nonFacultyType)) {
+    state.error = 'Select a valid author type.'
+    return
+  }
+
+  actionLoading.value[id] = true
+  try {
+    await axios.put(`${apiBase}/publication-author-links/${id}`, {
+      status: 'confirmed',
+      non_faculty_author_name: name,
+      non_faculty_type: state.nonFacultyType
+    })
+    await fetchMatches()
+    if (activeMatchId.value === id) {
+      closeMatchModal()
+    }
+  } catch (err) {
+    state.error = err?.response?.data?.message || 'Failed to add non-faculty author.'
   } finally {
     actionLoading.value[id] = false
   }
 }
 
 const rejectMatch = async (id) => {
-  rowErrors.value[id] = ''
+  if (rowStates.value[id]) {
+    rowStates.value[id].error = ''
+  }
   actionLoading.value[id] = true
   try {
     await axios.put(`${apiBase}/publication-author-links/${id}`, {
       status: 'rejected'
     })
     await fetchMatches()
+    if (activeMatchId.value === id) {
+      closeMatchModal()
+    }
   } catch (err) {
-    rowErrors.value[id] = err?.response?.data?.message || 'Failed to reject match.'
+    if (rowStates.value[id]) {
+      rowStates.value[id].error = err?.response?.data?.message || 'Failed to reject match.'
+    }
   } finally {
     actionLoading.value[id] = false
   }
@@ -296,6 +526,19 @@ const changePage = (page) => {
   if (page < 1 || page > pagination.value.total_pages) return
   pagination.value.current_page = page
   fetchMatches()
+}
+
+const openMatchModal = (match) => {
+  activeMatchId.value = match.id
+  if (!rowStates.value[match.id]) {
+    rowStates.value[match.id] = buildRowState(match)
+  }
+  showMatchModal.value = true
+}
+
+const closeMatchModal = () => {
+  showMatchModal.value = false
+  activeMatchId.value = null
 }
 
 const visiblePages = computed(() => {

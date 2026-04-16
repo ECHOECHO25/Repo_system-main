@@ -43,6 +43,9 @@ class PublicationsController extends ResourceController
             $search = $this->request->getGet('search');
             $page = $this->request->getGet('page') ?? 1;
             $perPage = $this->request->getGet('per_page') ?? 20;
+            // Default: show only publications that are fully matched.
+            // Send matched_only=0 to fetch everything.
+            $matchedOnly = (int)($this->request->getGet('matched_only') ?? 1) === 1;
 
             $builder = $publicationModel->builder();
 
@@ -62,6 +65,28 @@ class PublicationsController extends ResourceController
                         ->orLike('authors', $search)
                         ->orLike('keywords', $search)
                         ->groupEnd();
+            }
+            if ($matchedOnly) {
+                $builder->where(
+                    "NOT EXISTS (
+                        SELECT 1
+                        FROM publication_author_links pal
+                        WHERE pal.publication_id = publications.id
+                          AND pal.status = 'pending'
+                    )",
+                    null,
+                    false
+                );
+                $builder->where(
+                    "EXISTS (
+                        SELECT 1
+                        FROM publication_author_links pal2
+                        WHERE pal2.publication_id = publications.id
+                          AND pal2.status = 'confirmed'
+                    )",
+                    null,
+                    false
+                );
             }
 
             // Get total count
@@ -152,6 +177,14 @@ class PublicationsController extends ResourceController
 
             $id = $this->model->getInsertID();
             $publication = $this->model->find($id);
+            $facultyLookup = $this->buildFacultyLookup();
+            $linkModel = new PublicationAuthorLinkModel();
+            $this->matchPublicationAuthors(
+                $linkModel,
+                $facultyLookup,
+                (int)$id,
+                $publication['authors'] ?? json_encode([])
+            );
 
             AuditLogger::log('publication.create', 'publication', (int)$id, 'Publication created', [
                 'title' => $publication['title'] ?? null,
