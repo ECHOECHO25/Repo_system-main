@@ -654,7 +654,7 @@ const SearchableSelect = defineComponent({
   `
 })
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 const { isAuthenticated } = useAuth()
 
 const query = ref('')
@@ -1163,12 +1163,22 @@ const normalizeHeader = (header) =>
     .replace(/[\s_-]+/g, '')
 
 const mapRowToFaculty = (row, headers = []) => {
+  const toImportNumberOrNull = (value, { allowInvalidAsNull = false } = {}) => {
+    if (value === null || value === undefined || value === '') return null
+    const parsed = Number(value)
+    if (Number.isNaN(parsed)) {
+      return allowInvalidAsNull ? null : value
+    }
+    return parsed
+  }
+
   if (Array.isArray(row)) {
+    const normalizedName = String(row[0] ?? '').trim()
     return {
-      name: row[0] || '',
-      citations: row[1] !== null && row[1] !== '' && row[1] !== undefined ? Number(row[1]) : null,
-      hIndex: row[2] !== null && row[2] !== '' && row[2] !== undefined ? Number(row[2]) : null,
-      i10Index: row[3] !== null && row[3] !== '' && row[3] !== undefined ? Number(row[3]) : null,
+      name: normalizedName,
+      citations: toImportNumberOrNull(row[1]),
+      hIndex: toImportNumberOrNull(row[2], { allowInvalidAsNull: true }),
+      i10Index: toImportNumberOrNull(row[3], { allowInvalidAsNull: true }),
       scholarUrl: normalizeScholarUrl(row[4])
     }
   }
@@ -1186,47 +1196,218 @@ const mapRowToFaculty = (row, headers = []) => {
     return undefined
   }
 
-  const toNumberOrNull = (value) => {
-    if (value === null || value === undefined || value === '') return null
-    const parsed = Number(value)
-    return Number.isNaN(parsed) ? value : parsed
-  }
-
   return {
-    name: getValue(['name', 'faculty', 'facultyname', 'nameoffacultyresearcher']) || '',
-    citations: toNumberOrNull(getValue(['citations', 'citation', 'googlescholarcitation'])),
-    hIndex: toNumberOrNull(getValue(['hindex', 'h-index'])),
-    i10Index: toNumberOrNull(getValue(['i10index', 'i-10index', 'i10'])),
+    name: String(getValue(['name', 'faculty', 'facultyname', 'nameoffacultyresearcher']) || '').trim(),
+    citations: toImportNumberOrNull(getValue(['citations', 'citation', 'googlescholarcitation'])),
+    hIndex: toImportNumberOrNull(getValue(['hindex', 'h-index']), { allowInvalidAsNull: true }),
+    i10Index: toImportNumberOrNull(getValue(['i10index', 'i-10index', 'i10']), { allowInvalidAsNull: true }),
     scholarUrl: normalizeScholarUrl(getValue(['scholarurl', 'google scholar account', 'googlescholaraccount']))
   }
 }
 
-const parseCsv = (text) => {
+const detectFacultyHeaderRow = (rows) => {
+  const aliases = [
+    ['name', 'faculty', 'facultyname', 'nameoffacultyresearcher'],
+    ['citations', 'citation', 'googlescholarcitation'],
+    ['hindex', 'h-index'],
+    ['i10index', 'i-10index', 'i10'],
+    ['scholarurl', 'google scholar account', 'googlescholaraccount']
+  ]
+
+  let bestIndex = -1
+  let bestScore = -1
+  const scanLimit = Math.min(rows.length, 10)
+
+  for (let i = 0; i < scanLimit; i += 1) {
+    const row = Array.isArray(rows[i]) ? rows[i] : []
+    const normalizedCells = row.map((cell) => normalizeHeader(cell))
+    let score = 0
+
+    aliases.forEach((group) => {
+      if (normalizedCells.some((cell) => group.includes(cell))) {
+        score += 1
+      }
+    })
+
+    if (score > bestScore) {
+      bestScore = score
+      bestIndex = i
+    }
+  }
+
+  return bestScore >= 2 ? bestIndex : -1
+}
+
+const detectChecklistHeaderRow = (rows) => {
+  const scanLimit = Math.min(rows.length, 20)
+
+  for (let i = 0; i < scanLimit; i += 1) {
+    const row = Array.isArray(rows[i]) ? rows[i] : []
+    const normalizedCells = row.map((cell) => normalizeHeader(cell))
+    if (
+      normalizedCells.includes('name') &&
+      normalizedCells.includes('collegedivision') &&
+      normalizedCells.includes('departmentofficeunit')
+    ) {
+      return i
+    }
+  }
+
+  return -1
+}
+
+const titleCase = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .split(' ')
+    .map((word) => (word ? word[0].toUpperCase() + word.slice(1) : ''))
+    .join(' ')
+
+const parseMasterlistRows = (rawRows) => {
+  let currentCampus = ''
+  let currentTeaching = ''
+  let headerDetected = false
+  const records = []
+
+  rawRows.forEach((row) => {
+    if (!Array.isArray(row)) return
+    const rawCells = row.map((cell) => String(cell ?? '').trim())
+    const nonEmpty = rawCells.filter((cell) => cell !== '')
+    if (!nonEmpty.length) return
+
+    const line = nonEmpty.join(' ')
+    const upperLine = line.toUpperCase()
+
+    const placeMatch = upperLine.match(/^[A-Z]\.\s+(.+)$/)
+    if (placeMatch && !upperLine.includes('TEACHING')) {
+      const place = placeMatch[1].trim()
+      if (place.includes('LA TRINIDAD')) currentCampus = 'La Trinidad'
+      else if (place.includes('BOKOD')) currentCampus = 'Bokod'
+      else if (place.includes('BUGUIAS')) currentCampus = 'Buguias'
+      else currentCampus = titleCase(place)
+      return
+    }
+
+    const typeMatch = upperLine.match(/^[A-Z]\.\d+\.\s+(TEACHING|NON-TEACHING)$/i)
+    if (typeMatch) {
+      currentTeaching = typeMatch[1].toUpperCase() === 'NON-TEACHING' ? 'Non-Teaching' : 'Teaching'
+      return
+    }
+
+    if (!headerDetected && upperLine.includes('NAME') && upperLine.includes('COLLEGE/DIVISION')) {
+      headerDetected = true
+      return
+    }
+
+    if (!headerDetected) return
+
+    const indexCol = rawCells.findIndex((cell) => /^\d+[.)]?$/.test(String(cell ?? '').trim()))
+    if (indexCol === -1) return
+
+    const name = String(rawCells[indexCol + 1] ?? '').trim()
+    if (!name) return
+
+    records.push({
+      campus: currentCampus || '',
+      name,
+      position: String(rawCells[indexCol + 2] ?? '').trim(),
+      college_division: String(rawCells[indexCol + 3] ?? '').trim(),
+      department_office_unit: String(rawCells[indexCol + 4] ?? '').trim(),
+      sex: String(rawCells[indexCol + 5] ?? '').trim(),
+      teaching_status: currentTeaching || ''
+    })
+  })
+
+  return records
+}
+
+const mapChecklistRowsToFaculty = (rows) => {
+  const parsedMasterlistRows = parseMasterlistRows(rows)
+  if (parsedMasterlistRows.length) {
+    return parsedMasterlistRows.map((row) => ({
+      name: row.name,
+      citations: null,
+      hIndex: null,
+      i10Index: null,
+      scholarUrl: ''
+    }))
+  }
+
+  const headerRowIndex = detectChecklistHeaderRow(rows)
+  if (headerRowIndex === -1) return []
+
+  const body = rows.slice(headerRowIndex + 1)
+  return body
+    .filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim() !== ''))
+    .map((row) => {
+      const trimmed = row.map((cell) => String(cell ?? '').trim())
+      const numberColumnIndex = trimmed.findIndex((cell) => /^\d+$/.test(cell))
+      if (numberColumnIndex === -1) {
+        return null
+      }
+
+      const name = String(trimmed[numberColumnIndex + 1] ?? '').trim()
+      if (!name) {
+        return null
+      }
+
+      return {
+        name,
+        citations: null,
+        hIndex: null,
+        i10Index: null,
+        scholarUrl: ''
+      }
+    })
+    .filter(Boolean)
+}
+
+const mapMatrixRowsToFaculty = (rows) => {
+  if (!rows.length) return []
+
+  const checklistRows = mapChecklistRowsToFaculty(rows)
+  if (checklistRows.length) {
+    return checklistRows
+  }
+
+  const headerRowIndex = detectFacultyHeaderRow(rows)
+  if (headerRowIndex === -1) {
+    return rows
+      .filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim() !== ''))
+      .map((row) => mapRowToFaculty(row))
+  }
+
+  const headers = rows[headerRowIndex] || []
+  const body = rows.slice(headerRowIndex + 1)
+
+  return body
+    .filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim() !== ''))
+    .map((row) => {
+      const rowObject = headers.reduce((acc, header, index) => {
+        acc[String(header ?? '')] = row[index]
+        return acc
+      }, {})
+      return mapRowToFaculty(rowObject, headers)
+    })
+}
+
+const parseCsvMatrix = (text) => {
   const rows = text.split(/\r?\n/).filter((row) => row.trim())
   if (!rows.length) return []
-  const dataRows = rows.map((row) =>
+  return rows.map((row) =>
     row
       .split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/)
       .map((value) => value.replace(/^"|"$/g, '').replace(/""/g, '"').trim())
   )
-  const [headers, ...body] = dataRows
-  return body
-    .filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''))
-    .map((row) => mapRowToFaculty(row, headers))
 }
 
-const parseXlsx = async (file) => {
+const parseXlsxMatrix = async (file) => {
   const buffer = await file.arrayBuffer()
   const workbook = XLSX.read(buffer, { type: 'array' })
   const sheetName = workbook.SheetNames[0]
   if (!sheetName) return []
   const sheet = workbook.Sheets[sheetName]
-  const json = XLSX.utils.sheet_to_json(sheet, { header: 1 })
-  if (!json.length) return []
-  const [headers, ...body] = json
-  return body
-    .filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''))
-    .map((row) => mapRowToFaculty(row, headers))
+  return XLSX.utils.sheet_to_json(sheet, { header: 1 })
 }
 
 const handleImport = async (event) => {
@@ -1237,13 +1418,24 @@ const handleImport = async (event) => {
   importSummary.value = ''
   importErrors.value = []
   try {
-    let imported = []
-    if (file.name.toLowerCase().endsWith('.xlsx')) {
-      imported = await parseXlsx(file)
+    let rawRows = []
+    if (/\.(xlsx|xls)$/i.test(file.name)) {
+      rawRows = await parseXlsxMatrix(file)
     } else {
       const text = await file.text()
-      imported = parseCsv(text)
+      rawRows = parseCsvMatrix(text)
     }
+
+    const masterlistRows = parseMasterlistRows(rawRows)
+    let imported = masterlistRows.length
+      ? masterlistRows.map((row) => ({
+          name: row.name,
+          citations: null,
+          hIndex: null,
+          i10Index: null,
+          scholarUrl: ''
+        }))
+      : mapMatrixRowsToFaculty(rawRows)
 
     const isEmptyRow = (row) =>
       !row.name &&
@@ -1253,6 +1445,8 @@ const handleImport = async (event) => {
       !row.scholarUrl
 
     imported = imported.filter((row) => !isEmptyRow(row))
+    imported = imported.filter((row) => row.name || row.citations !== null || row.hIndex !== null || row.i10Index !== null || row.scholarUrl)
+    imported = imported.filter((row) => row.name && row.name.trim())
 
     if (imported.length === 0) {
       importErrors.value = [
@@ -1265,6 +1459,45 @@ const handleImport = async (event) => {
       importSummary.value = 'Imported 0 row(s). 0 row(s) skipped.'
       showImportErrorsModal.value = true
       return
+    }
+
+    if (masterlistRows.length) {
+      try {
+        const response = await axios.post(`${apiBase}/faculty-masterlist/bulk-import`, {
+          rows: masterlistRows
+        })
+        const inserted = Number(response?.data?.inserted || 0)
+        const updated = Number(response?.data?.updated || 0)
+        const skipped = Array.isArray(response?.data?.skipped) ? response.data.skipped : []
+
+        importErrors.value = skipped.map((item) => ({
+          row: item?.row ?? '-',
+          name: '',
+          reason: item?.reason || 'Skipped'
+        }))
+        importSummary.value = `Imported ${inserted} row(s). Updated ${updated} row(s). ${skipped.length} row(s) skipped.`
+        showImportSuccessModal.value = inserted > 0 || updated > 0
+        showImportErrorsModal.value = skipped.length > 0
+        recordAudit('faculty.import', {
+          total: masterlistRows.length,
+          inserted,
+          updated,
+          skipped: skipped.length,
+          mode: 'masterlist'
+        })
+        fetchFaculty()
+        return
+      } catch (error) {
+        importErrors.value = [
+          {
+            row: '-',
+            name: '',
+            reason: error?.response?.data?.message || 'Failed to sync faculty masterlist details.'
+          }
+        ]
+        showImportErrorsModal.value = true
+        return
+      }
     }
 
   const existingNames = new Set(
@@ -1308,12 +1541,14 @@ const handleImport = async (event) => {
         inserted += 1
       } catch (error) {
         failed += 1
+        const reason = error?.response?.status === 409
+          ? 'Name already exists.'
+          : (error?.response?.data?.message || 'Failed to save to server.')
         importErrors.value.push({
           row: index + 2,
           name: row.name || '',
-          reason: 'Failed to save to server.'
+          reason
         })
-        console.error('Error importing faculty:', error)
       }
     }
     importSummary.value = `Imported ${inserted} row(s). ${invalidCount + failed} row(s) skipped.`

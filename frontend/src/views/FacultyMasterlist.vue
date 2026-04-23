@@ -362,7 +362,7 @@ import * as XLSX from 'xlsx'
 import ExcelJS from 'exceljs'
 import { useAuth } from '../composables/useAuth'
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 const { isAuthenticated, role } = useAuth()
 const canManage = computed(() => isAuthenticated.value && role.value !== 'viewer')
 const rows = ref([])
@@ -951,3 +951,4 @@ const goToPage = (nextPage) => {
   transform: translateY(8px);
 }
 </style>  
+

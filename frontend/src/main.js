@@ -13,6 +13,8 @@ import AuditLogs from './views/AuditLogs.vue'
 import AddUser from './views/AddUser.vue'
 import Acknowledgements from './views/Acknowledgements.vue'
 import AuthorMatches from './views/AuthorMatches.vue'
+import Authors from './views/Authors.vue'
+import Approval from './views/Approval.vue'
 import { useAuth } from './composables/useAuth'
 
 const routes = [
@@ -22,7 +24,9 @@ const routes = [
   { path: '/publications', component: Publications },
   { path: '/faculty', component: Faculty },
   { path: '/audit-logs', component: AuditLogs, meta: { requiresAuth: true } },
+  { path: '/authors', component: Authors, meta: { requiresAuth: true } },
   { path: '/author-matches', component: AuthorMatches, meta: { requiresAuth: true } },
+  { path: '/approval', component: Approval, meta: { requiresAuth: true } },
   { path: '/acknowledgements', component: Acknowledgements },
   { path: '/add-user', component: AddUser, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
@@ -35,7 +39,7 @@ const router = createRouter({
 
 axios.defaults.withCredentials = true
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 const { setUser, clearUser } = useAuth()
 let isHandlingUnauthorized = false
 
@@ -82,3 +86,4 @@ const app = createApp(App)
 app.use(router)
 app.use(createPinia())
 app.mount('#app')
+

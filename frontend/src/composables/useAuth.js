@@ -7,7 +7,7 @@ const checked = ref(false)
 const isAuthenticated = computed(() => !!user.value)
 const role = computed(() => user.value?.role || null)
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 
 const checkAuth = async () => {
   try {
@@ -39,3 +39,4 @@ export const useAuth = () => ({
   setUser,
   clearUser
 })
+

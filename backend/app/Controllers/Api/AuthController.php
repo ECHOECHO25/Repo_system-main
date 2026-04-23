@@ -10,13 +10,35 @@ class AuthController extends ResourceController
 {
     protected $format = 'json';
 
+    private function resolveAllowedOrigin(): string
+    {
+        $request = service('request');
+        $requestOrigin = trim((string)$request->getHeaderLine('Origin'));
+        $configured = trim((string)(getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173'));
+
+        if ($configured === '' || $configured === '*') {
+            $configured = 'http://localhost:5173';
+        }
+
+        if ($requestOrigin === '') {
+            return $configured;
+        }
+
+        if ($requestOrigin === $configured || preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#i', $requestOrigin)) {
+            return $requestOrigin;
+        }
+
+        return $configured;
+    }
+
     public function __construct()
     {
-        $origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+        $origin = $this->resolveAllowedOrigin();
         header("Access-Control-Allow-Origin: {$origin}");
         header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Content-Type, Authorization');
+        header('Vary: Origin');
 
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(200);

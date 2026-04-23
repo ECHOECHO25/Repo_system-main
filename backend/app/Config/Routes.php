@@ -26,12 +26,16 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) 
     $routes->get('publications', 'PublicationsController::index');
     $routes->get('publications/(:num)', 'PublicationsController::show/$1');
     $routes->get('publications/recent', 'PublicationsController::recent');
+    $routes->get('publications/review-queue', 'PublicationsController::reviewQueue');
     $routes->get('publications/by-year/(:num)', 'PublicationsController::byYear/$1');
     $routes->post('publications/bulk-import', 'PublicationsController::bulkImport');
     $routes->post('publications', 'PublicationsController::create');
+    $routes->put('publications/(:num)/review', 'PublicationsController::review/$1');
     $routes->put('publications/(:num)', 'PublicationsController::update/$1');
     $routes->delete('publications/(:num)', 'PublicationsController::delete/$1');
     $routes->get('publication-author-links/pending', 'PublicationAuthorLinksController::pending');
+    $routes->get('publication-author-links/confirmed', 'PublicationAuthorLinksController::confirmed');
+    $routes->get('publication-author-links/author-suggestions', 'PublicationAuthorLinksController::authorSuggestions');
     $routes->get('publication-author-links/publication/(:num)', 'PublicationAuthorLinksController::byPublication/$1');
     $routes->post('publication-author-links', 'PublicationAuthorLinksController::create');
     $routes->put('publication-author-links/(:num)', 'PublicationAuthorLinksController::update/$1');
@@ -62,4 +66,10 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function($routes) 
     $routes->delete('acknowledgements/(:num)', 'AcknowledgementsController::delete/$1');
 
     // Faculty Masterlist
+    $routes->get('faculty-masterlist', 'FacultyMasterlistController::index');
+    $routes->post('faculty-masterlist', 'FacultyMasterlistController::create');
+    $routes->put('faculty-masterlist/(:num)', 'FacultyMasterlistController::update/$1');
+    $routes->delete('faculty-masterlist/(:num)', 'FacultyMasterlistController::delete/$1');
+    $routes->post('faculty-masterlist/bulk-import', 'FacultyMasterlistController::bulkImport');
+    $routes->get('faculty-masterlist/export', 'FacultyMasterlistController::export');
 });

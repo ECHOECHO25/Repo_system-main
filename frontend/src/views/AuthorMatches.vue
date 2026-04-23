@@ -71,9 +71,16 @@
                       Match
                     </button>
                     <span
-                      class="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-amber-200"
+                      v-if="match.suggested_faculty_name"
+                      class="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-emerald-200"
                     >
-                      Unmatched
+                      {{ match.suggested_faculty_name }}
+                    </span>
+                    <span
+                      class="rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.22em]"
+                      :class="match.suggested_faculty_name ? 'bg-emerald-500/10 text-emerald-200' : 'bg-amber-500/10 text-amber-200'"
+                    >
+                      {{ match.suggested_faculty_name ? 'Suggested' : 'Unmatched' }}
                     </span>
                   </div>
                 </td>
@@ -148,15 +155,16 @@
         </div>
 
         <div v-if="activeState" class="mt-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-          <label class="block text-[10px] uppercase tracking-[0.2em] text-slate-500">Search Faculty</label>
+          <label class="block text-[10px] uppercase tracking-[0.2em] text-slate-500">Search Faculty / Existing Author</label>
           <div class="relative mt-2">
             <input
               v-model="activeState.query"
               type="text"
               class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
-              @input="onFacultyQuery(activeMatch)"
+              @input="onCombinedQuery(activeMatch)"
               @focus="openFacultyOptions(activeMatch.id)"
               @blur="closeFacultyOptions(activeMatch.id)"
+              placeholder="Search faculty or previously added author..."
             />
             <div
               v-if="activeState.optionsOpen && activeState.options.length"
@@ -164,12 +172,18 @@
             >
               <button
                 v-for="option in activeState.options"
-                :key="`modal-${activeMatch.id}-${option.id}`"
+                :key="`modal-${activeMatch.id}-${option.kind}-${option.key}`"
                 type="button"
                 class="block w-full rounded-lg px-2 py-2 text-left text-slate-200 hover:bg-slate-800"
-                @mousedown.prevent="selectFaculty(activeMatch.id, option)"
+                @mousedown.prevent="selectCombinedOption(activeMatch.id, option)"
               >
-                {{ option.name }}
+                <span>{{ option.name }}</span>
+                <span
+                  class="ml-2 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]"
+                  :class="option.kind === 'faculty' ? 'bg-emerald-500/10 text-emerald-200' : 'bg-cyan-500/10 text-cyan-200'"
+                >
+                  {{ option.kind === 'faculty' ? 'Faculty' : 'Existing Author' }}
+                </span>
               </button>
             </div>
           </div>
@@ -207,14 +221,6 @@
             </button>
             <button
               type="button"
-              class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500 disabled:opacity-50"
-              :disabled="actionLoading[activeMatch.id]"
-              @click="addFacultyFromAuthor(activeMatch)"
-            >
-              Add Faculty
-            </button>
-            <button
-              type="button"
               class="rounded-full border border-cyan-400/40 px-4 py-2 text-xs uppercase tracking-[0.22em] text-cyan-200 hover:border-cyan-300 disabled:opacity-50"
               :disabled="actionLoading[activeMatch.id]"
               @click="addNonFacultyAuthor(activeMatch)"
@@ -241,7 +247,7 @@
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 
 const loading = ref(false)
 const error = ref('')
@@ -297,15 +303,20 @@ const buildRowState = (match, existing = null) => {
   const exact = facultyOptions.value.find(
     (option) => normalizePerson(option.name) === normalizePerson(match.author_name)
   )
+  const suggestedId = match?.suggested_faculty_id ? String(match.suggested_faculty_id) : ''
+  const suggestedName = match?.suggested_faculty_name || ''
+  const resolvedId = current.facultyId || suggestedId || (exact ? String(exact.id) : '')
+  const resolvedName = current.facultyName || suggestedName || (exact ? exact.name : '')
 
   return {
     query: prefilled,
-    facultyId: current.facultyId || (exact ? String(exact.id) : ''),
-    facultyName: current.facultyName || (exact ? exact.name : ''),
+    facultyId: resolvedId,
+    facultyName: resolvedName,
     nonFacultyName: current.nonFacultyName || match.author_name || '',
     nonFacultyType: current.nonFacultyType || 'external',
+    authorOptions: Array.isArray(current.authorOptions) ? current.authorOptions : [],
     optionsOpen: false,
-    options: findFacultyOptions(prefilled, match.author_name),
+    options: [],
     error: ''
   }
 }
@@ -373,8 +384,11 @@ const fetchFacultyOptions = async () => {
 }
 
 const openFacultyOptions = (id) => {
-  if (!rowStates.value[id]) return
-  rowStates.value[id].optionsOpen = true
+  const state = rowStates.value[id]
+  const match = matches.value.find((item) => item.id === id)
+  if (!state || !match) return
+  state.optionsOpen = true
+  onCombinedQuery(match)
 }
 
 const closeFacultyOptions = (id) => {
@@ -384,22 +398,75 @@ const closeFacultyOptions = (id) => {
   }, 120)
 }
 
-const onFacultyQuery = (match) => {
+const fetchAuthorSuggestions = async (state, search) => {
+  try {
+    const response = await axios.get(`${apiBase}/publication-author-links/author-suggestions`, {
+      params: {
+        search: String(search || '').trim() || undefined,
+        limit: 20
+      }
+    })
+    state.authorOptions = response.data?.data || []
+  } catch {
+    state.authorOptions = []
+  }
+}
+
+const buildCombinedOptions = (state, match) => {
+  const faculty = findFacultyOptions(state.query, match.author_name).map((option) => ({
+    kind: 'faculty',
+    key: String(option.id),
+    id: option.id,
+    name: option.name
+  }))
+
+  const existingAuthors = (state.authorOptions || []).map((option) => ({
+    kind: 'author',
+    key: String(option.author_name || ''),
+    name: String(option.author_name || ''),
+    author_type: String(option.author_type || 'external')
+  }))
+
+  const merged = [...faculty, ...existingAuthors]
+  const seen = new Set()
+  return merged.filter((item) => {
+    const normalized = `${item.kind}:${normalizePerson(item.name)}`
+    if (!item.name || seen.has(normalized)) return false
+    seen.add(normalized)
+    return true
+  }).slice(0, 30)
+}
+
+const onCombinedQuery = async (match) => {
   const state = rowStates.value[match.id]
   if (!state) return
-  state.options = findFacultyOptions(state.query, match.author_name)
+  if (state.facultyName && normalizePerson(state.query) !== normalizePerson(state.facultyName)) {
+    state.facultyId = ''
+    state.facultyName = ''
+  }
+  await fetchAuthorSuggestions(state, state.query)
+  state.options = buildCombinedOptions(state, match)
   state.optionsOpen = true
-  state.facultyId = ''
-  state.facultyName = ''
   state.error = ''
 }
 
-const selectFaculty = (id, option) => {
+const selectCombinedOption = (id, option) => {
   const state = rowStates.value[id]
   if (!state) return
-  state.query = option.name
-  state.facultyId = String(option.id)
-  state.facultyName = option.name
+  const selectedName = String(option?.name || '').trim()
+  if (!selectedName) return
+  state.query = selectedName
+  if (option.kind === 'faculty') {
+    state.facultyId = String(option.id)
+    state.facultyName = selectedName
+  } else {
+    state.facultyId = ''
+    state.facultyName = ''
+    state.nonFacultyName = selectedName
+    if (option.author_type && ['internal', 'external', 'international'].includes(option.author_type)) {
+      state.nonFacultyType = option.author_type
+    }
+  }
   state.optionsOpen = false
   state.error = ''
 }
@@ -426,42 +493,6 @@ const confirmMatch = async (match) => {
     }
   } catch (err) {
     state.error = err?.response?.data?.message || 'Failed to confirm match.'
-  } finally {
-    actionLoading.value[id] = false
-  }
-}
-
-const addFacultyFromAuthor = async (match) => {
-  const id = match.id
-  const state = rowStates.value[id]
-  if (!state) return
-  state.error = ''
-  actionLoading.value[id] = true
-  try {
-    const response = await axios.post(`${apiBase}/faculty`, {
-      name: match.author_name,
-      status: 'active'
-    })
-    const facultyId = response?.data?.data?.id
-    const facultyName = response?.data?.data?.name || match.author_name
-    if (!facultyId) {
-      state.error = 'Faculty created but no ID returned.'
-      return
-    }
-    state.facultyId = String(facultyId)
-    state.facultyName = facultyName
-    state.query = facultyName
-    await axios.put(`${apiBase}/publication-author-links/${id}`, {
-      status: 'confirmed',
-      faculty_id: facultyId
-    })
-    await fetchFacultyOptions()
-    await fetchMatches()
-    if (activeMatchId.value === id) {
-      closeMatchModal()
-    }
-  } catch (err) {
-    state.error = err?.response?.data?.message || 'Failed to add faculty.'
   } finally {
     actionLoading.value[id] = false
   }
@@ -567,3 +598,4 @@ onMounted(() => {
   fetchFacultyOptions()
 })
 </script>
+

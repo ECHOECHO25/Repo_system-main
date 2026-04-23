@@ -16,8 +16,9 @@
           class="hidden"
           @change="handleFileChange"
         >
-        <template v-if="isAuthenticated">
+        <template v-if="canAddPublications || canManagePublications">
           <button
+            v-if="canManagePublications"
             class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200 hover:border-slate-500"
             :disabled="importing"
             @click="triggerImport"
@@ -25,6 +26,7 @@
             {{ importing ? 'Importing...' : 'Import Excel' }}
           </button>
           <button
+            v-if="canManagePublications"
             class="rounded-full border border-slate-700 px-4 py-2 text-xs uppercase tracking-[0.28em] text-slate-200 hover:border-slate-500"
             :disabled="exporting"
             @click="openExportModal"
@@ -32,6 +34,7 @@
             {{ exporting ? 'Exporting...' : 'Export Excel' }}
           </button>
           <button
+            v-if="canManagePublications"
             class="rounded-full border border-red-400/40 px-4 py-2 text-xs uppercase tracking-[0.28em] text-red-200 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="selectedIds.length === 0"
             @click="openBulkDeleteModal"
@@ -48,8 +51,8 @@
       </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div>
           <label class="text-xs uppercase tracking-[0.22em] text-slate-500">Year</label>
           <select
@@ -93,6 +96,19 @@
             @input="debounceSearch"
           >
         </div>
+        <div v-if="canManagePublications || isResearcher">
+          <label class="text-xs uppercase tracking-[0.22em] text-slate-500">Review Status</label>
+          <select
+            v-model="filters.review_status"
+            class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+            @change="fetchPublications"
+          >
+            <option value="">All</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -107,7 +123,7 @@
             <table class="w-full table-fixed text-sm">
               <thead class="sticky top-0 z-10 bg-slate-950/90 text-left text-xs uppercase tracking-[0.24em] text-slate-400">
                 <tr>
-                  <th v-if="isAuthenticated" class="px-4 py-3 w-10">
+                  <th v-if="canManagePublications" class="px-4 py-3 w-10">
                     <input
                       type="checkbox"
                       class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -117,19 +133,20 @@
                   </th>
                   <th class="px-4 py-3 w-16">Year</th>
                   <th class="px-4 py-3">Title</th>
-                  <th class="px-4 py-3">Authors</th>
-                  <th class="px-4 py-3 w-24">Type</th>
-                  <th class="px-4 py-3">College</th>
-                  <th class="px-4 py-3 w-28 text-right">Citations</th>
-                  <th v-if="isAuthenticated" class="px-4 py-3 w-44 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800">
+                    <th class="px-4 py-3">Authors</th>
+                    <th class="px-4 py-3 w-24">Type</th>
+                    <th class="px-4 py-3">College</th>
+                    <th v-if="canManagePublications || isResearcher" class="px-4 py-3 w-36">Status</th>
+                    <th class="px-4 py-3 w-28 text-right">Citations</th>
+                    <th v-if="canManagePublications || isResearcher" class="px-4 py-3 w-44 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
                 <template v-for="pub in publicationRows" :key="pub.id">
                 <tr
                   class="transition hover:bg-slate-900/60"
                 >
-                  <td v-if="isAuthenticated" class="px-4 py-5 align-top">
+                  <td v-if="canManagePublications" class="px-4 py-5 align-top">
                     <input
                       type="checkbox"
                       class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-400"
@@ -186,13 +203,27 @@
                       <span class="break-words">{{ pub.college_institute || 'Unknown' }}</span>
                     </span>
                   </td>
+                  <td v-if="canManagePublications || isResearcher" class="px-4 py-5 align-top">
+                    <span
+                      class="rounded-full px-3 py-1 text-xs uppercase tracking-[0.22em]"
+                      :class="reviewStatusClass(pub.review_status)"
+                    >
+                      {{ formatReviewStatus(pub.review_status) }}
+                    </span>
+                    <p
+                      v-if="isResearcher && String(pub.review_status || '') === 'rejected' && pub.review_remarks"
+                      class="mt-2 max-w-xs text-xs text-rose-300"
+                    >
+                      Reason: {{ pub.review_remarks }}
+                    </p>
+                  </td>
                   <td class="px-4 py-5 align-top text-right">
                     <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200" v-if="pub.citations">
                       {{ pub.citations }}
                     </span>
                     <span class="text-slate-500" v-else>-</span>
                   </td>
-                  <td v-if="isAuthenticated" class="px-4 py-5 align-top text-right">
+                  <td v-if="canManagePublications || isResearcher" class="px-4 py-5 align-top text-right">
                     <div class="flex flex-wrap justify-end gap-2">
                       <button
                         class="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500"
@@ -202,15 +233,16 @@
                       </button>
                       <button
                         class="rounded-full border border-yellow-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-yellow-200 hover:border-yellow-400"
+                        :disabled="!canManagePublications && !canResearcherResubmit(pub)"
                         @click="confirmEdit(pub)"
                       >
-                        Edit
+                        {{ canResearcherResubmit(pub) && !canManagePublications ? 'Edit & Resubmit' : 'Edit' }}
                       </button>
                     </div>
                   </td>
                 </tr>
-                <tr v-if="isAuthenticated && openMatchId === pub.id" class="bg-slate-950/60">
-                  <td :colspan="isAuthenticated ? 8 : 7" class="px-4 py-5">
+                <tr v-if="canManagePublications && openMatchId === pub.id" class="bg-slate-950/60">
+                  <td :colspan="canManagePublications ? 8 : 7" class="px-4 py-5">
                     <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
                       <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -346,15 +378,24 @@
               <div class="mt-3 text-sm text-slate-300">
                 {{ formatAuthors(pub.authors) }}
               </div>
-              <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span class="rounded-full border border-slate-800 px-3 py-1 uppercase tracking-[0.22em]">
                   {{ pub.college_institute || 'Unknown' }}
                 </span>
-                <span class="rounded-full border border-slate-800 px-3 py-1 uppercase tracking-[0.22em]">
-                  Citations: {{ pub.citations || 0 }}
-                </span>
-              </div>
-              <div v-if="isAuthenticated" class="mt-4 flex flex-wrap items-center gap-2">
+                  <span class="rounded-full border border-slate-800 px-3 py-1 uppercase tracking-[0.22em]">
+                    Citations: {{ pub.citations || 0 }}
+                  </span>
+                  <span v-if="canManagePublications || isResearcher" class="rounded-full px-3 py-1 uppercase tracking-[0.22em]" :class="reviewStatusClass(pub.review_status)">
+                    {{ formatReviewStatus(pub.review_status) }}
+                  </span>
+                </div>
+                <p
+                  v-if="isResearcher && String(pub.review_status || '') === 'rejected' && pub.review_remarks"
+                  class="mt-2 text-xs text-rose-300"
+                >
+                  Reason: {{ pub.review_remarks }}
+                </p>
+              <div v-if="canManagePublications || canResearcherResubmit(pub)" class="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   class="rounded-full border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.22em] text-slate-200 hover:border-slate-500"
                   @click="viewPublication(pub)"
@@ -365,10 +406,10 @@
                   class="rounded-full border border-yellow-400/40 px-3 py-1 text-xs uppercase tracking-[0.22em] text-yellow-200 hover:border-yellow-400"
                   @click="confirmEdit(pub)"
                 >
-                  Edit
+                  {{ canResearcherResubmit(pub) && !canManagePublications ? 'Edit & Resubmit' : 'Edit' }}
                 </button>
               </div>
-              <div v-if="isAuthenticated && openMatchId === pub.id" class="mt-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+              <div v-if="canManagePublications && openMatchId === pub.id" class="mt-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                 <div class="flex items-center justify-between">
                   <p class="text-xs uppercase tracking-[0.22em] text-slate-500">Author Matches</p>
                   <button class="text-xs uppercase tracking-[0.22em] text-slate-400 hover:text-slate-200" @click="closeMatchPanel">
@@ -492,6 +533,7 @@
       :show="showModal"
       :publication="selectedPublication"
       :mode="modalMode"
+      :show-author-matches="canManagePublications"
       @close="closeModal"
       @saved="handleSaved"
     />
@@ -630,7 +672,7 @@ import * as XLSX from 'xlsx';
 import PublicationModal from '../components/PublicationModal.vue';
 import { useAuth } from '../composables/useAuth';
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api';
 const auth = useAuth();
 
 export default {
@@ -642,12 +684,13 @@ export default {
     return {
       loading: true,
       publications: [],
-      filters: {
-        year: '',
-        college: '',
-        type: '',
-        search: ''
-      },
+        filters: {
+          year: '',
+          college: '',
+          type: '',
+          search: '',
+          review_status: ''
+        },
       pagination: {
         current_page: 1,
         per_page: 20,
@@ -700,6 +743,18 @@ export default {
     isAuthenticated() {
       return auth.isAuthenticated.value;
     },
+    role() {
+      return auth.role.value;
+    },
+    canManagePublications() {
+      return this.isAuthenticated && ['admin', 'editor'].includes(this.role);
+    },
+    isResearcher() {
+      return this.isAuthenticated && this.role === 'researcher';
+    },
+    canAddPublications() {
+      return this.isAuthenticated && ['admin', 'editor', 'researcher'].includes(this.role);
+    },
     visiblePages() {
       const pages = [];
       const current = this.pagination.current_page;
@@ -732,15 +787,16 @@ export default {
     this.fetchFilterOptions();
   },
   methods: {
-    async fetchPublications() {
-      this.loading = true;
-      try {
-        const params = {
-          page: this.pagination.current_page,
-          per_page: this.pagination.per_page,
-          matched_only: 1,
-          ...this.filters
-        };
+      async fetchPublications() {
+        this.loading = true;
+        try {
+          const matchedOnly = (this.canManagePublications || this.isResearcher) ? 0 : 1;
+          const params = {
+            page: this.pagination.current_page,
+            per_page: this.pagination.per_page,
+            matched_only: matchedOnly,
+            ...this.filters
+          };
 
         const response = await axios.get(`${apiBase}/publications`, { params });
         this.publications = Array.isArray(response.data?.data) ? response.data.data : [];
@@ -845,13 +901,34 @@ export default {
       }
     },
 
-    confirmEdit(pub) {
-      this.confirmAction = 'edit';
-      this.confirmTarget = pub;
-      this.confirmTitle = 'Edit publication';
-      this.confirmMessage = 'Do you want to edit this publication?';
-      this.showConfirmModal = true;
-    },
+      confirmEdit(pub) {
+        this.confirmAction = 'edit';
+        this.confirmTarget = pub;
+        const isResubmission = this.canResearcherResubmit(pub) && !this.canManagePublications;
+        this.confirmTitle = isResubmission ? 'Edit and resubmit publication' : 'Edit publication';
+        this.confirmMessage = isResubmission
+          ? 'Do you want to edit this rejected publication and resubmit it for approval?'
+          : 'Do you want to edit this publication?';
+        this.showConfirmModal = true;
+      },
+      canResearcherResubmit(pub) {
+        if (!this.isResearcher) return false;
+        if (!pub || typeof pub !== 'object') return false;
+        return String(pub.review_status || '') === 'rejected';
+      },
+      formatReviewStatus(value) {
+        const status = String(value || '').trim();
+        if (!status) return 'Approved';
+        if (status === 'pending_review') return 'Pending Review';
+        if (status === 'rejected') return 'Rejected';
+        return 'Approved';
+      },
+      reviewStatusClass(value) {
+        const status = String(value || '').trim();
+        if (status === 'pending_review') return 'bg-amber-500/10 text-amber-200';
+        if (status === 'rejected') return 'bg-rose-500/10 text-rose-200';
+        return 'bg-emerald-500/10 text-emerald-200';
+      },
     toggleMatchPanel(pub) {
       if (this.openMatchId === pub.id) {
         this.closeMatchPanel();

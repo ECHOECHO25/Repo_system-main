@@ -13,7 +13,9 @@ class FacultyModel extends Model
     protected $useSoftDeletes   = true;
     protected $allowedFields    = [
         'name', 'google_scholar_citations', 'h_index', 'i10_index',
-        'google_scholar_account', 'college_institute', 'email', 'status'
+        'google_scholar_account', 'college_institute', 'email', 'status',
+        'campus', 'position', 'college_division', 'department_office_unit',
+        'sex', 'teaching_status'
     ];
 
     protected $useTimestamps = true;

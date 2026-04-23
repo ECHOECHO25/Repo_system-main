@@ -1,3 +1,4 @@
+<!--Developer: Jherico Santos-->
 <template>
   <div class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-slate-100">
 
@@ -36,7 +37,7 @@
       <div class="flex-1 min-w-0">
         <div class="flex flex-wrap items-center justify-center gap-2 text-[10px] uppercase tracking-[0.18em] text-slate-400 sm:text-xs sm:tracking-[0.28em]">
           <router-link
-            v-for="item in topNavItems"
+            v-for="item in filteredTopNavItems"
             :key="item.path"
             :to="item.path"
             class="whitespace-nowrap rounded-full px-3 py-2 transition sm:px-4"
@@ -204,7 +205,9 @@ let timer
 const menuItems = [
   { name: 'Dashboard', path: '/dashboard', icon: ChartBarIcon },
   { name: 'Publications', path: '/publications', icon: DocumentTextIcon },
+  { name: 'Authors', path: '/authors', icon: UserGroupIcon },
   { name: 'Author Matches', path: '/author-matches', icon: DocumentTextIcon, requiresAuth: true },
+  { name: 'Approval', path: '/approval', icon: DocumentTextIcon, requiresReviewer: true },
   { name: 'Faculty', path: '/faculty', icon: UserGroupIcon },
   { name: 'Acknowledgements', path: '/acknowledgements', icon: BookOpenIcon },
   { name: 'Audit Logs', path: '/audit-logs', icon: ClockIcon, requiresAuth: true },
@@ -214,14 +217,35 @@ const menuItems = [
 const topNavItems = [
   { name: 'Dashboard', path: '/dashboard' },
   { name: 'Publications', path: '/publications' },
+  { name: 'Authors', path: '/authors' },
   { name: 'Faculty', path: '/faculty' },
   { name: 'Acknowledgements', path: '/acknowledgements' }
 ]
 
+const isResearcher = computed(() => isAuthenticated.value && role.value === 'researcher')
+const isReviewer = computed(() => isAuthenticated.value && ['admin', 'editor'].includes(role.value))
+
+const filteredTopNavItems = computed(() =>
+  (isResearcher.value
+    ? topNavItems.filter((item) => item.path === '/publications')
+    : topNavItems
+  ).filter((item) => {
+    if (item.requiresReviewer) return isReviewer.value
+    if (item.requiresAuth) return isAuthenticated.value
+    return true
+  })
+)
+
 const filteredMenuItems = computed(() =>
   menuItems.filter((item) => {
+    if (isResearcher.value) {
+      return item.path === '/publications'
+    }
     if (item.requiresAdmin) {
       return isAuthenticated.value && role.value === 'admin'
+    }
+    if (item.requiresReviewer) {
+      return isReviewer.value
     }
     if (item.requiresAuth) {
       return isAuthenticated.value
@@ -235,7 +259,7 @@ const closeSidebar = () => (sidebarOpen.value = false)
 
 const handleLogout = async () => {
   try {
-    await axios.post('http://localhost:8080/api/auth/logout')
+    await axios.post('http://localhost/Repo_system-main/backend/public/api/auth/logout')
   } catch {}
   clearUser()
   window.location.href = '/login'

@@ -42,7 +42,7 @@ class UsersController extends ResourceController
                 return $this->fail(['status' => 'error', 'message' => 'Username and password are required'], 400);
             }
 
-            if (!in_array($userRole, ['admin', 'editor'], true)) {
+            if (!in_array($userRole, ['admin', 'editor', 'researcher'], true)) {
                 return $this->fail(['status' => 'error', 'message' => 'Invalid role'], 400);
             }
 

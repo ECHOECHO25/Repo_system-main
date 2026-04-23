@@ -43,9 +43,16 @@ class PublicationsController extends ResourceController
             $search = $this->request->getGet('search');
             $page = $this->request->getGet('page') ?? 1;
             $perPage = $this->request->getGet('per_page') ?? 20;
-            // Default: show only publications that are fully matched.
-            // Send matched_only=0 to fetch everything.
-            $matchedOnly = (int)($this->request->getGet('matched_only') ?? 1) === 1;
+            $reviewStatus = trim((string)($this->request->getGet('review_status') ?? ''));
+            $role = (string)(session()->get('role') ?? '');
+            $userId = (int)(session()->get('user_id') ?? 0);
+            $isReviewer = in_array($role, ['admin', 'editor'], true);
+            $isResearcher = $role === 'researcher' && $userId > 0;
+            // For admin/editor, default is review mode (show all).
+            // For researcher, show own submissions (including rejected/pending) so they can resubmit.
+            // Public/others default to matched-only approved.
+            $defaultMatchedOnly = ($isReviewer || $isResearcher) ? 0 : 1;
+            $matchedOnly = (int)($this->request->getGet('matched_only') ?? $defaultMatchedOnly) === 1;
 
             $builder = $publicationModel->builder();
 
@@ -65,6 +72,17 @@ class PublicationsController extends ResourceController
                         ->orLike('authors', $search)
                         ->orLike('keywords', $search)
                         ->groupEnd();
+            }
+            if ($isReviewer && in_array($reviewStatus, ['pending_review', 'approved', 'rejected'], true)) {
+                $builder->where('review_status', $reviewStatus);
+            }
+            if ($isResearcher) {
+                $builder->where('submitted_by_user_id', $userId);
+                if (!$reviewStatus) {
+                    $builder->whereIn('review_status', ['pending_review', 'approved', 'rejected']);
+                }
+            } elseif (!$isReviewer) {
+                $builder->where('review_status', 'approved');
             }
             if ($matchedOnly) {
                 $builder->where(
@@ -151,8 +169,24 @@ class PublicationsController extends ResourceController
     public function create()
     {
         try {
+            if (!$this->canCreatePublication()) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ], 403);
+            }
+
             $data = $this->request->getJSON(true);
             $data['authors'] = $this->normalizeAuthors($data['authors'] ?? null);
+            $role = (string)(session()->get('role') ?? '');
+            $userId = (int)(session()->get('user_id') ?? 0);
+            $isReviewer = in_array($role, ['admin', 'editor'], true);
+            $now = date('Y-m-d H:i:s');
+            $data['review_status'] = $isReviewer ? 'approved' : 'pending_review';
+            $data['submitted_by_user_id'] = $userId > 0 ? $userId : null;
+            $data['reviewed_by_user_id'] = $isReviewer && $userId > 0 ? $userId : null;
+            $data['reviewed_at'] = $isReviewer ? $now : null;
+            $data['review_remarks'] = null;
 
             if (!empty($data['year']) && !empty($data['title'])) {
                 $duplicate = $this->model
@@ -212,9 +246,39 @@ class PublicationsController extends ResourceController
     public function update($id = null)
     {
         try {
+            $publication = $this->model->find($id);
+            if (!$publication) {
+                return $this->failNotFound('Publication not found');
+            }
+
+            $role = (string)(session()->get('role') ?? '');
+            $userId = (int)(session()->get('user_id') ?? 0);
+            $canManage = $this->canFullyManagePublications();
+            $canResearcherResubmit = (
+                $role === 'researcher'
+                && $userId > 0
+                && (int)($publication['submitted_by_user_id'] ?? 0) === $userId
+                && (string)($publication['review_status'] ?? '') === 'rejected'
+            );
+
+            if (!$canManage && !$canResearcherResubmit) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ], 403);
+            }
+
             $data = $this->request->getJSON(true);
             if (array_key_exists('authors', $data)) {
                 $data['authors'] = $this->normalizeAuthors($data['authors']);
+            }
+            unset($data['review_status'], $data['submitted_by_user_id'], $data['reviewed_by_user_id'], $data['reviewed_at'], $data['review_remarks']);
+
+            if ($canResearcherResubmit) {
+                $data['review_status'] = 'pending_review';
+                $data['reviewed_by_user_id'] = null;
+                $data['reviewed_at'] = null;
+                $data['review_remarks'] = null;
             }
 
             if (!empty($data['year']) && !empty($data['title'])) {
@@ -231,10 +295,6 @@ class PublicationsController extends ResourceController
                 }
             }
             
-            if (!$this->model->find($id)) {
-                return $this->failNotFound('Publication not found');
-            }
-
             if (!$this->model->update($id, $data)) {
                 return $this->fail([
                     'status' => 'error',
@@ -247,7 +307,8 @@ class PublicationsController extends ResourceController
 
             AuditLogger::log('publication.update', 'publication', (int)$id, 'Publication updated', [
                 'title' => $publication['title'] ?? null,
-                'year' => $publication['year'] ?? null
+                'year' => $publication['year'] ?? null,
+                'resubmitted' => $canResearcherResubmit
             ]);
 
             return $this->respond([
@@ -271,6 +332,13 @@ class PublicationsController extends ResourceController
     public function delete($id = null)
     {
         try {
+            if (!$this->canFullyManagePublications()) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ], 403);
+            }
+
             if (!$this->model->find($id)) {
                 return $this->failNotFound('Publication not found');
             }
@@ -343,6 +411,147 @@ class PublicationsController extends ResourceController
         }
     }
 
+    public function reviewQueue()
+    {
+        try {
+            if (!$this->canReviewPublications()) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ], 403);
+            }
+
+            $year = $this->request->getGet('year');
+            $college = $this->request->getGet('college');
+            $type = $this->request->getGet('type');
+            $search = $this->request->getGet('search');
+            $page = (int)($this->request->getGet('page') ?? 1);
+            $perPage = (int)($this->request->getGet('per_page') ?? 20);
+            $page = $page > 0 ? $page : 1;
+            $perPage = $perPage > 0 ? min($perPage, 200) : 20;
+
+            $builder = $this->model->builder();
+            $builder->where('review_status', 'pending_review');
+
+            if ($year) {
+                $builder->where('year', $year);
+            }
+            if ($college) {
+                $builder->like('college_institute', $college);
+            }
+            if ($type) {
+                $builder->where('publication_type', $type);
+            }
+            if ($search) {
+                $builder->groupStart()
+                    ->like('title', $search)
+                    ->orLike('authors', $search)
+                    ->orLike('keywords', $search)
+                    ->groupEnd();
+            }
+
+            $total = $builder->countAllResults(false);
+            $rows = $builder->orderBy('created_at', 'DESC')
+                ->limit($perPage, ($page - 1) * $perPage)
+                ->get()
+                ->getResultArray();
+
+            return $this->respond([
+                'status' => 'success',
+                'data' => $rows,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => (int)$total,
+                    'total_pages' => (int)ceil($total / $perPage)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->fail([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function review($id = null)
+    {
+        try {
+            if (!$this->canReviewPublications()) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ], 403);
+            }
+
+            $publication = $this->model->find($id);
+            if (!$publication) {
+                return $this->failNotFound('Publication not found');
+            }
+
+            $payload = $this->request->getJSON(true);
+            $status = trim((string)($payload['status'] ?? ''));
+            if (!in_array($status, ['approved', 'rejected'], true)) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Invalid review status'
+                ], 400);
+            }
+
+            $userId = (int)(session()->get('user_id') ?? 0);
+            $data = [
+                'review_status' => $status,
+                'reviewed_by_user_id' => $userId > 0 ? $userId : null,
+                'reviewed_at' => date('Y-m-d H:i:s'),
+                'review_remarks' => trim((string)($payload['remarks'] ?? '')) ?: null,
+            ];
+
+            if (!$this->model->update($id, $data)) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Failed to update review status',
+                    'errors' => $this->model->errors()
+                ], 400);
+            }
+
+            $updated = $this->model->find($id);
+
+            if ($status === 'approved' && $updated) {
+                $facultyLookup = $this->buildFacultyLookup();
+                $linkModel = new PublicationAuthorLinkModel();
+                $this->matchPublicationAuthors(
+                    $linkModel,
+                    $facultyLookup,
+                    (int)$id,
+                    (string)($updated['authors'] ?? json_encode([]))
+                );
+            }
+
+            $updated = $this->model->find($id);
+            AuditLogger::log(
+                $status === 'approved' ? 'publication.approve' : 'publication.reject',
+                'publication',
+                (int)$id,
+                $status === 'approved' ? 'Publication approved' : 'Publication rejected',
+                [
+                    'title' => $updated['title'] ?? null,
+                    'review_remarks' => $updated['review_remarks'] ?? null,
+                ]
+            );
+
+            return $this->respond([
+                'status' => 'success',
+                'message' => $status === 'approved' ? 'Publication approved' : 'Publication rejected',
+                'data' => $updated
+            ]);
+        } catch (\Exception $e) {
+            return $this->fail([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Bulk import publications
      * POST /api/publications/bulk-import
@@ -350,6 +559,13 @@ class PublicationsController extends ResourceController
     public function bulkImport()
     {
         try {
+            if (!$this->canFullyManagePublications()) {
+                return $this->fail([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ], 403);
+            }
+
             $publications = $this->request->getJSON(true);
             
             if (!is_array($publications) || empty($publications)) {
@@ -442,6 +658,23 @@ class PublicationsController extends ResourceController
         return json_encode($cleaned);
     }
 
+    private function canCreatePublication(): bool
+    {
+        $role = (string)(session()->get('role') ?? '');
+        return in_array($role, ['admin', 'editor', 'researcher'], true);
+    }
+
+    private function canFullyManagePublications(): bool
+    {
+        $role = (string)(session()->get('role') ?? '');
+        return in_array($role, ['admin', 'editor'], true);
+    }
+
+    private function canReviewPublications(): bool
+    {
+        return $this->canFullyManagePublications();
+    }
+
     private function buildFacultyLookup(): array
     {
         $facultyModel = new FacultyModel();
@@ -486,6 +719,7 @@ class PublicationsController extends ResourceController
             $matches = $normalized !== '' && isset($facultyLookup[$normalized])
                 ? $facultyLookup[$normalized]
                 : [];
+            $existingByAuthor = $this->findLinkByNormalizedAuthor($linkModel, $publicationId, $normalized);
 
             if (count($matches) === 1) {
                 $facultyId = $matches[0];
@@ -495,20 +729,27 @@ class PublicationsController extends ResourceController
                 if ($existing) {
                     continue;
                 }
-                $linkModel->insert([
-                    'publication_id' => $publicationId,
-                    'faculty_id' => $facultyId,
-                    'author_name' => $authorName,
-                    'match_type' => 'auto',
-                    'status' => 'confirmed',
-                ]);
+
+                if ($existingByAuthor) {
+                    $linkModel->update((int)$existingByAuthor['id'], [
+                        'faculty_id' => $facultyId,
+                        'author_name' => $authorName,
+                        'match_type' => 'auto',
+                        'status' => 'confirmed',
+                    ]);
+                } else {
+                    $linkModel->insert([
+                        'publication_id' => $publicationId,
+                        'faculty_id' => $facultyId,
+                        'author_name' => $authorName,
+                        'match_type' => 'auto',
+                        'status' => 'confirmed',
+                    ]);
+                }
                 continue;
             }
 
-            $existingPending = $linkModel->where('publication_id', $publicationId)
-                ->where('author_name', $authorName)
-                ->first();
-            if ($existingPending) {
+            if ($existingByAuthor) {
                 continue;
             }
             $linkModel->insert([
@@ -519,6 +760,29 @@ class PublicationsController extends ResourceController
                 'status' => 'pending',
             ]);
         }
+    }
+
+    private function findLinkByNormalizedAuthor(
+        PublicationAuthorLinkModel $linkModel,
+        int $publicationId,
+        string $normalizedAuthor
+    ): ?array {
+        if ($normalizedAuthor === '') {
+            return null;
+        }
+
+        $db = \Config\Database::connect();
+        $escaped = $db->escape($normalizedAuthor);
+
+        $row = $linkModel->builder()
+            ->where('publication_id', $publicationId)
+            ->where("LOWER(TRIM(author_name)) = {$escaped}", null, false)
+            ->orderBy('id', 'ASC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        return is_array($row) ? $row : null;
     }
 
     private function normalizePersonName(string $value): string

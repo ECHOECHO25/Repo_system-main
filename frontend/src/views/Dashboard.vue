@@ -394,7 +394,7 @@
 import axios from 'axios';
 import Chart from 'chart.js/auto';
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api';
 
 export default {
   name: 'Dashboard',
@@ -475,9 +475,12 @@ export default {
     },
 
     getKpiDescription(label) {
+      if (/^Publications \d{4}$/.test(label || '')) {
+        return 'Current year publication count';
+      }
+
       const descriptions = {
         'Total Publications': 'Cumulative count of all research outputs recorded',
-        'Publications 2025': 'Current year publication count',
         'Total Faculty': 'Active faculty members with research profiles',
         'Avg H-Index': 'Average H-index indicating overall research impact',
         'Total Citations': 'Sum of all citations received'
@@ -748,3 +751,4 @@ export default {
   }
 }
 </style>
+

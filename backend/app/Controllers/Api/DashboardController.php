@@ -33,6 +33,8 @@ class DashboardController extends ResourceController
     public function index()
     {
         try {
+            $currentYear = (int) date('Y');
+            $previousYear = $currentYear - 1;
             $cache = null;
             $cacheKey = 'dashboard:index';
             try {
@@ -58,7 +60,7 @@ class DashboardController extends ResourceController
             // Get publications by year for trends
             $yearlyTrends = [];
             $years = [];
-            for ($year = 2017; $year <= 2025; $year++) {
+            for ($year = 2017; $year <= $currentYear; $year++) {
                 $count = $publicationModel->where('year', $year)->countAllResults();
                 $yearlyTrends[] = [
                     'year' => $year,
@@ -90,8 +92,8 @@ class DashboardController extends ResourceController
                 ],
                 [
                     'type' => 'No Recent Publications',
-                    'description' => 'Faculty with no 2024-2025 publications',
-                    'count' => count($facultyModel->getInactiveFaculty([2024, 2025])),
+                    'description' => "Faculty with no {$previousYear}-{$currentYear} publications",
+                    'count' => count($facultyModel->getInactiveFaculty([$previousYear, $currentYear])),
                     'severity' => 'warning',
                     'status' => 'Action Needed'
                 ]
@@ -106,8 +108,8 @@ class DashboardController extends ResourceController
                     'color' => 'primary'
                 ],
                 [
-                    'label' => 'Publications 2025',
-                    'value' => $publicationModel->where('year', 2025)->countAllResults(),
+                    'label' => "Publications {$currentYear}",
+                    'value' => $publicationModel->where('year', $currentYear)->countAllResults(),
                     'icon' => 'file-text',
                     'color' => 'success'
                 ],
@@ -220,6 +222,8 @@ class DashboardController extends ResourceController
     public function facultyMetrics()
     {
         try {
+            $currentYear = (int) date('Y');
+            $previousYear = $currentYear - 1;
             $cache = null;
             $cacheKey = 'dashboard:faculty-metrics';
             try {
@@ -236,7 +240,7 @@ class DashboardController extends ResourceController
             $metrics = $facultyModel->getMetrics();
             $topCitations = $facultyModel->getTopByCitations(5);
             $topHIndex = $facultyModel->getTopByHIndex(5);
-            $inactiveFaculty = $facultyModel->getInactiveFaculty([2024, 2025]);
+            $inactiveFaculty = $facultyModel->getInactiveFaculty([$previousYear, $currentYear]);
 
             $payload = [
                 'status' => 'success',

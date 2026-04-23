@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-8 text-slate-100">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -33,94 +33,50 @@
       v-if="volumeDistributionTotals.length"
       class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 px-4 py-4"
     >
-      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Volume Distribution Counter</p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Volume Distribution Counter</p>
+        <p class="text-[11px] uppercase tracking-[0.16em] text-slate-500">Click a volume to view records</p>
+      </div>
       <div class="mt-3 flex flex-wrap gap-2">
         <div
           v-for="item in volumeDistributionTotals"
           :key="item.volume"
-          class="rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs text-slate-200"
+          class="min-w-[220px] rounded-3xl border border-slate-700 bg-slate-900/70 px-5 py-4 text-left text-sm text-slate-200 transition hover:border-emerald-400 hover:bg-slate-900"
         >
-          <div class="font-semibold text-emerald-300">Volume {{ item.volume }}</div>
-          <div class="mt-1 text-slate-300">Inside BSU: <span class="font-semibold">{{ item.inside }}</span></div>
-          <div class="text-slate-300">Outside BSU: <span class="font-semibold">{{ item.outside }}</span></div>
-          <div class="text-slate-300">Others: <span class="font-semibold">{{ item.others }}</span></div>
+          <div class="text-lg font-semibold text-emerald-300">Volume {{ item.volume }}</div>
+          <button
+            type="button"
+            class="mt-3 block w-full rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-left text-slate-300 transition hover:border-emerald-400 hover:bg-emerald-500/10"
+            @click="openVolumeModal(item.volume, 'Inside BSU')"
+          >
+            Inside BSU: <span class="font-semibold text-slate-100">{{ item.inside }}</span>
+          </button>
+          <button
+            type="button"
+            class="mt-2 block w-full rounded-2xl border border-sky-500/20 bg-sky-500/5 px-3 py-2 text-left text-slate-300 transition hover:border-sky-400 hover:bg-sky-500/10"
+            @click="openVolumeModal(item.volume, 'Outside BSU')"
+          >
+            Outside BSU: <span class="font-semibold text-slate-100">{{ item.outside }}</span>
+          </button>
+          <button
+            type="button"
+            class="mt-2 block w-full rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-left text-slate-300 transition hover:border-amber-400 hover:bg-amber-500/10"
+            @click="openVolumeModal(item.volume, 'Others')"
+          >
+            Others: <span class="font-semibold text-slate-100">{{ item.others }}</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
-      <div v-if="loading" class="px-4 py-6 text-sm text-slate-300">Loading acknowledgement records...</div>
-      <div v-else-if="error" class="px-4 py-6 text-sm text-rose-300">{{ error }}</div>
-      <div v-else-if="filteredRows.length === 0" class="px-4 py-6 text-sm text-slate-300">
-        No acknowledgement records found.
-      </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-800 text-left text-sm">
-          <thead class="bg-slate-900/70 text-xs uppercase tracking-[0.16em] text-slate-400">
-            <tr>
-              <th class="px-4 py-3 font-semibold">Date</th>
-              <th class="px-4 py-3 font-semibold">Time</th>
-              <th class="px-4 py-3 font-semibold">Name</th>
-              <th class="px-4 py-3 font-semibold">BSU Scope</th>
-              <th class="px-4 py-3 font-semibold">Position</th>
-              <th class="px-4 py-3 font-semibold">Affiliation/Agency</th>
-              <th class="px-4 py-3 font-semibold">Volume</th>
-              <th class="px-4 py-3 font-semibold">No. of Copies</th>
-              <th class="px-4 py-3 font-semibold">Remarks</th>
-              <th v-if="isAuthenticated" class="px-4 py-3 font-semibold">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800 text-slate-200">
-            <tr v-for="row in filteredRows" :key="row.groupKey">
-              <td class="px-4 py-3">{{ formatDate(row.date_issued) }}</td>
-              <td class="px-4 py-3">{{ formatTime(row.time_issued) }}</td>
-              <td class="px-4 py-3">{{ row.name || '-' }}</td>
-              <td class="px-4 py-3">
-                <span
-                  class="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
-                  :class="scopeBadgeClass(row.bsu_scope)"
-                >
-                  {{ row.bsu_scope || 'Unspecified' }}
-                </span>
-              </td>
-              <td class="px-4 py-3">{{ row.position || '-' }}</td>
-              <td class="px-4 py-3">{{ row.affiliation || '-' }}</td>
-              <td class="px-4 py-3">{{ row.itemsLabel || '-' }}</td>
-              <td class="px-4 py-3">{{ row.copiesLabel || '-' }}</td>
-              <td class="px-4 py-3">{{ row.remarksLabel || '-' }}</td>
-              <td v-if="isAuthenticated" class="px-4 py-3">
-                <div class="flex items-center gap-3 whitespace-nowrap">
-                <button
-                  v-if="isAuthenticated"
-                  type="button"
-                  class="rounded border border-emerald-500/70 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-200 hover:border-emerald-400"
-                  @click="printRecord(row)"
-                >
-                  Print
-                </button>
-                <button
-                  v-if="isAuthenticated"
-                  type="button"
-                  class="rounded border border-sky-500/70 bg-sky-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-200 hover:border-sky-400"
-                  @click="openAddVolumeModal(row)"
-                >
-                  Edit
-                </button>
-                <button
-                  v-if="isAuthenticated"
-                  type="button"
-                  class="rounded border border-rose-500/70 bg-rose-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-200 hover:border-rose-400"
-                  @click="deleteRecord(row)"
-                >
-                  Delete
-                </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div v-if="loading" class="mt-6 rounded-2xl border border-slate-800 px-4 py-6 text-sm text-slate-300">
+      Loading acknowledgement records...
+    </div>
+    <div v-else-if="error" class="mt-6 rounded-2xl border border-slate-800 px-4 py-6 text-sm text-rose-300">
+      {{ error }}
+    </div>
+    <div v-else-if="filteredRows.length === 0" class="mt-6 rounded-2xl border border-slate-800 px-4 py-6 text-sm text-slate-300">
+      No acknowledgement records found.
     </div>
   </section>
 
@@ -409,6 +365,113 @@
 
   <transition name="fade">
     <div
+      v-if="showVolumeModal"
+      class="fixed inset-0 z-40 bg-black/60"
+      @click="closeVolumeModal"
+    ></div>
+  </transition>
+
+  <transition name="modal">
+    <div v-if="showVolumeModal" class="fixed inset-0 z-50 grid place-items-center p-4">
+      <div class="w-full max-w-6xl rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl" @click.stop>
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">
+              Volume {{ selectedVolume || '-' }} {{ selectedScope ? `- ${selectedScope}` : '' }} Records
+            </h2>
+            <p class="mt-1 text-xs text-slate-400">Filtered entries for the selected volume.</p>
+          </div>
+          <button
+            type="button"
+            class="rounded-md border border-slate-700 px-3 py-1 text-xs uppercase tracking-[0.18em] text-slate-300 hover:border-slate-500"
+            @click="closeVolumeModal"
+          >
+            Close
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <input
+            v-model.trim="selectedVolumeSearch"
+            type="text"
+            placeholder="Search within this volume..."
+            class="w-full rounded-full border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none"
+          />
+        </div>
+
+        <div v-if="selectedVolumeFilteredRows.length === 0" class="rounded-xl border border-slate-800 px-4 py-6 text-sm text-slate-300">
+          No records found for this volume.
+        </div>
+
+        <div v-else class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="min-w-full divide-y divide-slate-800 text-left text-sm">
+            <thead class="bg-slate-900/70 text-xs uppercase tracking-[0.16em] text-slate-400">
+              <tr>
+                <th class="px-4 py-3 font-semibold">Date</th>
+                <th class="px-4 py-3 font-semibold">Time</th>
+                <th class="px-4 py-3 font-semibold">Name</th>
+                <th class="px-4 py-3 font-semibold">BSU Scope</th>
+                <th class="px-4 py-3 font-semibold">Position</th>
+                <th class="px-4 py-3 font-semibold">Affiliation/Agency</th>
+                <th class="px-4 py-3 font-semibold">Volume</th>
+                <th class="px-4 py-3 font-semibold">No. of Copies</th>
+                <th class="px-4 py-3 font-semibold">Remarks</th>
+                <th v-if="isAuthenticated" class="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr v-for="row in selectedVolumeFilteredRows" :key="row.groupKey">
+                <td class="px-4 py-3">{{ formatDate(row.date_issued) }}</td>
+                <td class="px-4 py-3">{{ formatTime(row.time_issued) }}</td>
+                <td class="px-4 py-3">{{ row.name || '-' }}</td>
+                <td class="px-4 py-3">
+                  <span
+                    class="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
+                    :class="scopeBadgeClass(row.bsu_scope)"
+                  >
+                    {{ row.bsu_scope || 'Unspecified' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">{{ row.position || '-' }}</td>
+                <td class="px-4 py-3">{{ row.affiliation || '-' }}</td>
+                <td class="px-4 py-3">{{ row.itemsLabel || '-' }}</td>
+                <td class="px-4 py-3">{{ row.copiesLabel || '-' }}</td>
+                <td class="px-4 py-3">{{ row.remarksLabel || '-' }}</td>
+                <td v-if="isAuthenticated" class="px-4 py-3">
+                  <div class="flex items-center gap-3 whitespace-nowrap">
+                    <button
+                      type="button"
+                      class="rounded border border-emerald-500/70 bg-emerald-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-emerald-200 hover:border-emerald-400"
+                      @click="printRecord(row)"
+                    >
+                      Print
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded border border-sky-500/70 bg-sky-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-sky-200 hover:border-sky-400"
+                      @click="openAddVolumeModal(row)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded border border-rose-500/70 bg-rose-500/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-rose-200 hover:border-rose-400"
+                      @click="deleteRecord(row)"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <transition name="fade">
+    <div
       v-if="showAddVolumeModal && isAuthenticated"
       class="fixed inset-0 z-[60] bg-black/60"
       @click="closeAddVolumeModal"
@@ -644,9 +707,13 @@ const searchQuery = ref('')
 const showModal = ref(false)
 const journalTitleInput = ref(null)
 const showAddVolumeModal = ref(false)
+const showVolumeModal = ref(false)
 const showDeleteModal = ref(false)
 const deleteTarget = ref(null)
 const deleting = ref(false)
+const selectedVolume = ref('')
+const selectedVolumeSearch = ref('')
+const selectedScope = ref('')
 const editForm = ref({
   id: null,
   date_issued: '',
@@ -689,7 +756,7 @@ const hourOptions = Array.from({ length: 12 }, (_, i) => i + 1)
 const minuteOptions = Array.from({ length: 60 }, (_, i) => i)
 const meridiemOptions = ['AM', 'PM']
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 
 const groupedRows = computed(() =>
   rows.value.map((row) => {
@@ -748,7 +815,7 @@ const filteredRows = computed(() => {
 const volumeDistributionTotals = computed(() => {
   const totals = new Map()
 
-  groupedRows.value.forEach((row) => {
+  filteredRows.value.forEach((row) => {
     const items = Array.isArray(row.itemRows) ? row.itemRows : []
     const scope = String(row.bsu_scope ?? '').trim()
     items.forEach((item) => {
@@ -785,6 +852,47 @@ const volumeDistributionTotals = computed(() => {
     }))
 })
 
+const selectedVolumeRows = computed(() => {
+  const target = String(selectedVolume.value ?? '').trim().toLowerCase()
+  if (!target) return []
+
+  return filteredRows.value.filter((row) => {
+    const matchesVolume = (Array.isArray(row.itemRows) ? row.itemRows : []).some(
+      (item) => String(item.volume ?? '').trim().toLowerCase() === target
+    )
+
+    if (!matchesVolume) return false
+    if (!selectedScope.value) return true
+    return String(row.bsu_scope ?? '').trim() === selectedScope.value
+  })
+})
+
+const selectedVolumeFilteredRows = computed(() => {
+  const q = selectedVolumeSearch.value.trim().toLowerCase()
+  if (!q) return selectedVolumeRows.value
+
+  return selectedVolumeRows.value.filter((row) => {
+    const haystack = [
+      formatDate(row.date_issued),
+      formatTime(row.time_issued),
+      row.name,
+      row.bsu_scope,
+      row.position,
+      row.affiliation,
+      row.itemsLabel,
+      row.copiesLabel,
+      row.remarksLabel,
+      row.issued_by,
+      row.received_by,
+      row.remarks
+    ]
+      .map((v) => String(v ?? '').toLowerCase())
+      .join(' ')
+
+    return haystack.includes(q)
+  })
+})
+
 const formatDate = (value) => {
   if (!value) return '-'
   const date = new Date(value)
@@ -810,6 +918,20 @@ const scopeBadgeClass = (scope) => {
     return 'border-amber-500/60 bg-amber-500/10 text-amber-200'
   }
   return 'border-slate-600 bg-slate-800/70 text-slate-300'
+}
+
+const openVolumeModal = (volume, scope = '') => {
+  selectedVolume.value = String(volume ?? '').trim()
+  selectedScope.value = String(scope ?? '').trim()
+  selectedVolumeSearch.value = ''
+  showVolumeModal.value = true
+}
+
+const closeVolumeModal = () => {
+  showVolumeModal.value = false
+  selectedVolume.value = ''
+  selectedScope.value = ''
+  selectedVolumeSearch.value = ''
 }
 
 const escapeHtml = (value) =>
@@ -1424,6 +1546,10 @@ const openModal = () => {
 
 const handleEscKey = (event) => {
   if (event.key !== 'Escape') return
+  if (showVolumeModal.value) {
+    closeVolumeModal()
+    return
+  }
   if (showAddVolumeModal.value) {
     closeAddVolumeModal()
     return

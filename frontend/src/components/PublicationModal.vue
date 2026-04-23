@@ -29,7 +29,7 @@
               <label class="text-xs uppercase tracking-[0.22em] text-slate-500">Authors</label>
               <textarea v-model="form.authors" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm" rows="2" :disabled="isView" required></textarea>
             </div>
-            <div class="md:col-span-6">
+            <div v-if="showAuthorMatches" class="md:col-span-6">
               <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -167,7 +167,7 @@
 <script>
 import axios from 'axios';
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api';
 
 export default {
   name: 'PublicationModal',
@@ -183,6 +183,10 @@ export default {
     mode: {
       type: String,
       default: 'view'
+    },
+    showAuthorMatches: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
@@ -207,12 +211,20 @@ export default {
     show(newVal) {
       if (newVal) {
         this.hydrateForm();
-        this.loadAuthorMatches();
+        if (this.showAuthorMatches) {
+          this.loadAuthorMatches();
+        } else {
+          this.authorMatches = [];
+        }
       }
     },
     publication() {
       this.hydrateForm();
-      this.loadAuthorMatches();
+      if (this.showAuthorMatches) {
+        this.loadAuthorMatches();
+      } else {
+        this.authorMatches = [];
+      }
     }
   },
   methods: {
@@ -268,6 +280,10 @@ export default {
       }));
     },
     async loadAuthorMatches() {
+      if (!this.showAuthorMatches) {
+        this.authorMatches = [];
+        return;
+      }
       if (!this.publication?.id) {
         this.authorMatches = [];
         return;
@@ -467,7 +483,12 @@ export default {
         this.$emit('saved');
       } catch (error) {
         console.error('Error saving publication:', error);
-        alert('Failed to save publication');
+        const message =
+          error?.response?.data?.message ||
+          error?.response?.data?.errors?.title ||
+          error?.response?.data?.errors?.year ||
+          'Failed to save publication';
+        alert(message);
       } finally {
         this.saving = false;
       }
@@ -478,3 +499,4 @@ export default {
 
 <style scoped>
 </style>
+

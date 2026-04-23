@@ -88,7 +88,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost/Repo_system-main/backend/public/api'
 
 const logs = ref([])
 const loading = ref(false)
@@ -151,3 +151,4 @@ const formatDate = (value) => {
 
 onMounted(fetchLogs)
 </script>
+

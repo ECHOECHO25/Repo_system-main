@@ -69,6 +69,18 @@ class Auth implements FilterInterface
                 'message' => 'Unauthorized'
             ]);
         }
+
+        $role = (string)($session->get('role') ?? '');
+        if ($role === 'researcher' && $method !== 'get') {
+            $isAllowedPublicationCreate = $path === 'api/publications' && $method === 'post';
+            $isAllowedPublicationUpdate = $method === 'put' && preg_match('#^api/publications/\d+$#', $path) === 1;
+            if (!$isAllowedPublicationCreate && !$isAllowedPublicationUpdate) {
+                return service('response')->setStatusCode(403)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Forbidden'
+                ]);
+            }
+        }
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)

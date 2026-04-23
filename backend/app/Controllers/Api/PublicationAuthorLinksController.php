@@ -38,8 +38,40 @@ class PublicationAuthorLinksController extends ResourceController
             $builder->select('publication_author_links.*');
             $builder->select('publications.title as publication_title');
             $builder->select('publications.year as publication_year');
+            $builder->select(
+                "(SELECT f.id
+                  FROM faculty f
+                  WHERE f.deleted_at IS NULL
+                    AND f.status = 'active'
+                    AND LOWER(TRIM(f.name)) = LOWER(TRIM(publication_author_links.author_name))
+                  ORDER BY f.id ASC
+                  LIMIT 1
+                ) as suggested_faculty_id",
+                false
+            );
+            $builder->select(
+                "(SELECT f.name
+                  FROM faculty f
+                  WHERE f.deleted_at IS NULL
+                    AND f.status = 'active'
+                    AND LOWER(TRIM(f.name)) = LOWER(TRIM(publication_author_links.author_name))
+                  ORDER BY f.id ASC
+                  LIMIT 1
+                ) as suggested_faculty_name",
+                false
+            );
             $builder->join('publications', 'publications.id = publication_author_links.publication_id', 'left');
             $builder->where('publication_author_links.status', 'pending');
+            $builder->where(
+                "NOT EXISTS (
+                    SELECT 1
+                    FROM publication_author_links pal2
+                    WHERE pal2.status = 'confirmed'
+                      AND LOWER(TRIM(pal2.author_name)) = LOWER(TRIM(publication_author_links.author_name))
+                )",
+                null,
+                false
+            );
 
             if ($search) {
                 $builder->groupStart()
@@ -65,6 +97,120 @@ class PublicationAuthorLinksController extends ResourceController
                     'total' => (int)$total,
                     'total_pages' => (int)ceil($total / $perPage)
                 ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->fail([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function confirmed()
+    {
+        try {
+            $search = $this->request->getGet('search');
+            $type = strtolower(trim((string)($this->request->getGet('type') ?? '')));
+            $page = $this->request->getGet('page') ?? 1;
+            $perPage = $this->request->getGet('per_page') ?? 20;
+
+            $builder = $this->model->builder();
+            $builder->select('MIN(publication_author_links.id) as id', false);
+            $builder->select('MIN(publication_author_links.author_name) as author_name', false);
+            $builder->select('COUNT(DISTINCT publication_author_links.publication_id) as author_publication_count', false);
+            $builder->select('MAX(CASE WHEN publication_author_links.faculty_id IS NULL THEN 0 ELSE 1 END) as has_faculty', false);
+            $builder->select('MAX(publication_author_links.updated_at) as updated_at', false);
+            $builder->where('publication_author_links.status', 'confirmed');
+
+            if ($type === 'faculty') {
+                $builder->where('publication_author_links.faculty_id IS NOT NULL', null, false);
+            } elseif ($type === 'non-faculty' || $type === 'nonfaculty') {
+                $builder->where('publication_author_links.faculty_id IS NULL', null, false);
+            }
+
+            if ($search) {
+                $builder->groupStart()
+                    ->like('publication_author_links.author_name', $search)
+                    ->groupEnd();
+            }
+
+            $builder->groupBy('LOWER(TRIM(publication_author_links.author_name))', false);
+
+            $total = $builder->countAllResults(false);
+
+            $rows = $builder
+                ->orderBy('updated_at', 'DESC')
+                ->limit($perPage, ($page - 1) * $perPage)
+                ->get()
+                ->getResultArray();
+
+            $rows = array_map(static function (array $row): array {
+                $row['faculty_id'] = ((int)($row['has_faculty'] ?? 0) > 0) ? 1 : null;
+                return $row;
+            }, $rows);
+
+            return $this->respond([
+                'status' => 'success',
+                'data' => $rows,
+                'pagination' => [
+                    'current_page' => (int)$page,
+                    'per_page' => (int)$perPage,
+                    'total' => (int)$total,
+                    'total_pages' => (int)ceil($total / $perPage)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return $this->fail([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function authorSuggestions()
+    {
+        try {
+            $search = trim((string)($this->request->getGet('search') ?? ''));
+            $limit = (int)($this->request->getGet('limit') ?? 20);
+            $limit = $limit > 0 ? min($limit, 100) : 20;
+
+            $db = \Config\Database::connect();
+            $escapedSearch = $db->escapeLikeString($search);
+
+            $whereSearch = $search !== ''
+                ? " WHERE author_name LIKE '%{$escapedSearch}%' ESCAPE '!' "
+                : '';
+
+            $sql = "
+                SELECT normalized_name, MIN(author_name) AS author_name, MAX(author_type) AS author_type
+                FROM (
+                    SELECT LOWER(TRIM(author_name)) AS normalized_name, author_name, 'external' AS author_type
+                    FROM publication_author_links
+                    WHERE status = 'confirmed' AND faculty_id IS NULL
+                    " . ($search !== '' ? " AND author_name LIKE '%{$escapedSearch}%' ESCAPE '!' " : '') . "
+
+                    UNION ALL
+
+                    SELECT LOWER(TRIM(author_name)) AS normalized_name, author_name, author_type
+                    FROM publication_non_faculty_authors
+                    {$whereSearch}
+                ) author_pool
+                GROUP BY normalized_name
+                ORDER BY author_name ASC
+                LIMIT {$limit}
+            ";
+
+            $rows = $db->query($sql)->getResultArray();
+            $data = array_map(static function (array $row): array {
+                return [
+                    'author_name' => $row['author_name'] ?? '',
+                    'author_type' => $row['author_type'] ?? 'external',
+                ];
+            }, $rows);
+
+            return $this->respond([
+                'status' => 'success',
+                'data' => $data,
             ]);
         } catch (\Exception $e) {
             return $this->fail([
