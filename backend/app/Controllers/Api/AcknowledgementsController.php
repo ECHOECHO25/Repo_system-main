@@ -12,7 +12,16 @@ class AcknowledgementsController extends ResourceController
 
     public function __construct()
     {
-        $origin = getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173';
+                $requestOrigin = trim((string) service('request')->getHeaderLine('Origin'));
+        $configured = rtrim(trim((string) (getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5173')), '/');
+
+        if ($requestOrigin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#i', $requestOrigin)) {
+            $origin = rtrim($requestOrigin, '/');
+        } elseif ($configured !== '' && $configured !== '*') {
+            $origin = $configured;
+        } else {
+            $origin = 'http://localhost:5173';
+        }
         header("Access-Control-Allow-Origin: {$origin}");
         header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
